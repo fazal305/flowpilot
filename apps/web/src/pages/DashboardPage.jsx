@@ -17,7 +17,7 @@ export function DashboardPage() {
         description="Create your first workflow to see live activity, run status, and execution history here."
         action={
           <Link
-            to="/workflows"
+            to="/workflows/new"
             className="mt-2 inline-flex items-center gap-2 rounded-md bg-accent px-3.5 py-2 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90"
           >
             <Plus className="h-4 w-4" aria-hidden="true" />

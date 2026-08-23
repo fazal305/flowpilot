@@ -17,6 +17,20 @@ export async function buildApp() {
     },
   });
 
+  // Registered before any app.register() calls: Fastify gives each plugin
+  // passed to register() its own encapsulated context that only inherits
+  // what the parent had *at the time it was registered*. Setting this after
+  // the route plugins below would silently never apply to them, leaking raw
+  // internal error messages (Prisma connection strings, stack traces) to
+  // clients via Fastify's default error serialization instead.
+  app.setErrorHandler((error, request, reply) => {
+    request.log.error(error);
+    const status = error.statusCode ?? 500;
+    reply.code(status).send({
+      error: status === 500 ? "Internal server error." : error.message,
+    });
+  });
+
   await app.register(cors, {
     origin: env.webOrigin,
     credentials: true,
@@ -31,14 +45,6 @@ export async function buildApp() {
   await app.register(authRoutes);
   await app.register(workflowRoutes);
   await app.register(executionRoutes);
-
-  app.setErrorHandler((error, request, reply) => {
-    request.log.error(error);
-    const status = error.statusCode ?? 500;
-    reply.code(status).send({
-      error: status === 500 ? "Internal server error." : error.message,
-    });
-  });
 
   return app;
 }

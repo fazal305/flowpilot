@@ -8,6 +8,7 @@ import { ExecutionsPage } from "@/pages/ExecutionsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { EditorPage } from "@/features/workflows/EditorPage";
+import { ExecutionDetailPage } from "@/features/executions/ExecutionDetailPage";
 import { CommandPalette } from "@/components/CommandPalette";
 import { useHotkeys } from "@/hooks/useHotkeys";
 import { useCommandPaletteStore } from "@/stores/commandPaletteStore";
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/workflows" element={<WorkflowsPage />} />
           <Route path="/executions" element={<ExecutionsPage />} />
+          <Route path="/executions/:executionId" element={<ExecutionDetailPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Routes>

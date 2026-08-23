@@ -4,6 +4,7 @@ import {
   triggerExecution,
   getExecution,
   getExecutionHistory,
+  getRecentExecutions,
   ExecutionNotFoundError,
 } from "../services/executionService.js";
 
@@ -34,5 +35,10 @@ export async function get(request, reply) {
 
 export async function history(request, reply) {
   const executions = await getExecutionHistory(request.params.id);
+  return reply.send({ executions });
+}
+
+export async function listRecent(_request, reply) {
+  const executions = await getRecentExecutions();
   return reply.send({ executions });
 }

@@ -5,6 +5,7 @@ import {
   putWorkflow,
   deleteWorkflow,
 } from "@/lib/db";
+import { api } from "@/services/apiClient";
 
 export const WORKFLOWS_QUERY_KEY = ["workflows"];
 
@@ -25,6 +26,23 @@ export function useDeleteWorkflow() {
   return useMutation({
     mutationFn: deleteWorkflow,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: WORKFLOWS_QUERY_KEY }),
+  });
+}
+
+/**
+ * Pushes the current local draft to the server so the execution engine has
+ * something to run against. This is the frontend's first real sync write —
+ * everything before this point (drafts, autosave) stayed entirely local.
+ */
+export function usePublishWorkflow() {
+  return useMutation({
+    mutationFn: async (workflow) =>
+      (await api.put(`/api/workflows/${workflow.id}`, {
+        name: workflow.name,
+        description: workflow.description,
+        status: workflow.status,
+        graph: workflow.graph,
+      })).workflow,
   });
 }
 

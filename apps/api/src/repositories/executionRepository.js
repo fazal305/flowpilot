@@ -23,3 +23,12 @@ export function listExecutionsForWorkflow(workflowId) {
     take: 50,
   });
 }
+
+export function listRecentExecutions(workspaceId) {
+  return prisma.workflowExecution.findMany({
+    where: { workflow: { workspaceId } },
+    orderBy: { startedAt: "desc" },
+    take: 50,
+    include: { workflow: { select: { name: true } } },
+  });
+}

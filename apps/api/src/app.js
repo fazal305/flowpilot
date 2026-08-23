@@ -5,6 +5,8 @@ import rateLimit from "@fastify/rate-limit";
 import { env } from "./config/env.js";
 import { healthRoutes } from "./routes/healthRoutes.js";
 import { authRoutes } from "./routes/authRoutes.js";
+import { workflowRoutes } from "./routes/workflowRoutes.js";
+import { executionRoutes } from "./routes/executionRoutes.js";
 
 export async function buildApp() {
   const app = Fastify({
@@ -27,6 +29,8 @@ export async function buildApp() {
 
   await app.register(healthRoutes);
   await app.register(authRoutes);
+  await app.register(workflowRoutes);
+  await app.register(executionRoutes);
 
   app.setErrorHandler((error, request, reply) => {
     request.log.error(error);

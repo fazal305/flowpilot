@@ -7,8 +7,10 @@ export function LoginPage() {
 
   function handleSubmit(event) {
     event.preventDefault();
-    // Wired to the real /api/auth/login endpoint once the backend is deployed
-    // (Phase 4). For now this validates the form shell only.
+    // The backend auth routes exist (register/login/logout/session cookie —
+    // see apps/api/src/routes/authRoutes.js) but aren't wired to this form
+    // yet, and haven't been verified against a live database either. This
+    // validates the form shell only for now.
   }
 
   return (
@@ -56,7 +58,7 @@ export function LoginPage() {
             Sign in
           </button>
           <p className="mt-3 text-center text-xs text-foreground-muted">
-            Authentication connects to the live API in Phase 4.
+            Sign-in isn't wired to the backend yet — nothing is sent anywhere.
           </p>
         </form>
       </div>

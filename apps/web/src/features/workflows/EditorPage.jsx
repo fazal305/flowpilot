@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ReactFlowProvider } from "@xyflow/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Sparkles, X } from "lucide-react";
+import { Sparkles, X, MonitorSmartphone } from "lucide-react";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useEditorStore } from "./store/editorStore";
 import { useWorkflow, WORKFLOWS_QUERY_KEY } from "./api/workflowDrafts";
 import { LAST_OPENED_QUERY_KEY, LAST_OPENED_WORKFLOW_KEY } from "./api/preferences";
@@ -167,6 +168,7 @@ function EditorPageInner({ routeId }) {
   const isNew = !routeId || routeId === "new";
   const { data: existingWorkflow, isLoading, isError } = useWorkflow(routeId);
   const generated = isNew ? location.state?.generated : null;
+  const isSmallScreen = useMediaQuery("(max-width: 767px)");
 
   useAutosave();
 
@@ -226,6 +228,30 @@ function EditorPageInner({ routeId }) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-background text-sm text-destructive">
         Couldn't load this workflow from local storage.
+      </div>
+    );
+  }
+
+  if (isSmallScreen) {
+    // Building a node graph by touch-dragging on a few hundred pixels of
+    // screen isn't a real editing experience — the brief is explicit that
+    // the canvas is desktop-first. Rather than serve a broken, unusably
+    // cramped canvas, say so and point back to the list, which is fully
+    // usable on a phone.
+    return (
+      <div className="flex h-screen w-screen flex-col items-center justify-center gap-3 bg-background px-6 text-center text-foreground">
+        <MonitorSmartphone className="h-6 w-6 text-foreground-muted" aria-hidden="true" />
+        <p className="text-sm font-medium">The workflow editor needs a larger screen.</p>
+        <p className="max-w-xs text-xs text-foreground-muted">
+          Building and editing node graphs needs the space a phone screen can't give it.
+          Workflow and execution details are still fully viewable here.
+        </p>
+        <Link
+          to="/workflows"
+          className="mt-2 rounded-md border border-border px-3.5 py-2 text-sm hover:bg-surface-muted"
+        >
+          Back to workflows
+        </Link>
       </div>
     );
   }

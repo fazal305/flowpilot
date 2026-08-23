@@ -4,6 +4,16 @@ import { getWorkflow } from "./workflowService.js";
 import { getDefaultWorkspaceId } from "../repositories/workspaceRepository.js";
 import { buildAdjacency, findTriggerNodes, nextNodeIds, descendantsOf } from "./graphParser.js";
 import { runNode } from "./nodeRunner.js";
+import { broadcast } from "../realtime/executionHub.js";
+
+/** WS messages are deliberately just a "something changed, refetch" signal —
+ * not a full state payload — so the REST endpoint (already correct, already
+ * tested) stays the single source of truth for execution shape. Duplicating
+ * that serialization over the socket would just be two places to keep in
+ * sync for no real benefit over one cheap refetch. */
+function notify(executionId, type) {
+  broadcast(executionId, { type, executionId });
+}
 
 function inputForNode(node, outputs, edges) {
   const incoming = edges.filter((e) => e.target === node.id);
@@ -38,6 +48,7 @@ export async function runExecution({ executionId, workflowId, triggeredBy }) {
     where: { id: executionId },
     data: { status: "RUNNING" },
   });
+  notify(executionId, "execution:updated");
 
   if (errors.length > 0) {
     await prisma.workflowExecution.update({
@@ -45,6 +56,7 @@ export async function runExecution({ executionId, workflowId, triggeredBy }) {
       data: { status: "FAILED", finishedAt: new Date(), durationMs: 0 },
     });
     await log(executionId, "ERROR", `Blocked before running: ${errors.map((e) => e.message).join("; ")}`);
+    notify(executionId, "execution:finished");
     return executionId;
   }
 
@@ -79,6 +91,7 @@ export async function runExecution({ executionId, workflowId, triggeredBy }) {
         startedAt: new Date(),
       },
     });
+    notify(executionId, "node:started");
 
     const nodeStart = Date.now();
     try {
@@ -98,6 +111,7 @@ export async function runExecution({ executionId, workflowId, triggeredBy }) {
           durationMs: Date.now() - nodeStart,
         },
       });
+      notify(executionId, "node:finished");
       await log(executionId, "INFO", `${node.label} succeeded in ${Date.now() - nodeStart}ms.`, node.id);
 
       for (const nextId of nextNodeIds(node, output, adjacency)) queue.push(nextId);
@@ -126,6 +140,7 @@ export async function runExecution({ executionId, workflowId, triggeredBy }) {
           durationMs: Date.now() - nodeStart,
         },
       });
+      notify(executionId, "node:finished");
       await log(executionId, "ERROR", `${node.label} failed: ${error.message}`, node.id);
       // Nothing downstream gets queued — a failed node's descendants simply
       // never run (they don't get a SKIPPED record either, since "we never
@@ -147,6 +162,7 @@ export async function runExecution({ executionId, workflowId, triggeredBy }) {
     data: { status: hasFailure ? "FAILED" : "SUCCESS", finishedAt: new Date(), durationMs },
   });
   await log(executionId, "INFO", `Execution finished (${hasFailure ? "failed" : "success"}) in ${durationMs}ms.`);
+  notify(executionId, "execution:finished");
 
   return executionId;
 }

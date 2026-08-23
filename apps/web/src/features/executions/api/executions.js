@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/services/apiClient";
 
-const RUNNING_STATES = new Set(["PENDING", "RUNNING"]);
+export const RUNNING_STATES = new Set(["PENDING", "RUNNING"]);
 
 export function useRecentExecutions() {
   return useQuery({
@@ -15,11 +15,10 @@ export function useExecution(id) {
     queryKey: ["executions", id],
     queryFn: async () => (await api.get(`/api/executions/${id}`)).execution,
     enabled: Boolean(id),
-    // Polls while the run is in flight; stops once it lands on a terminal
-    // status. WebSocket-pushed updates replace this in Phase 7 — this is a
-    // real (if less elegant) way to reflect a real backend state in the
-    // meantime, not a simulated/faked progress bar.
-    refetchInterval: (query) => (RUNNING_STATES.has(query.state.data?.status) ? 1000 : false),
+    // Backstop, not the primary channel — WebSocket pushes (useExecutionSocket)
+    // handle real-time updates while connected; this just guarantees the UI
+    // still converges on the truth within a few seconds if the socket drops.
+    refetchInterval: (query) => (RUNNING_STATES.has(query.state.data?.status) ? 4000 : false),
   });
 }
 

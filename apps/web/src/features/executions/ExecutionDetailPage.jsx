@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, AlertTriangle } from "lucide-react";
-import { useExecution } from "./api/executions";
+import { useExecution, RUNNING_STATES } from "./api/executions";
+import { useExecutionSocket } from "./useExecutionSocket";
 import { NODE_DEFINITIONS } from "@/features/workflows/nodeDefinitions";
 import { NODE_STATUS_STYLES, EXECUTION_STATUS_STYLES, formatDuration, shortId } from "./statusStyles";
 
@@ -100,11 +101,9 @@ function NodeDetailPanel({ nodeExecution }) {
 export function ExecutionDetailPage() {
   const { executionId } = useParams();
   const [selectedNodeKey, setSelectedNodeKey] = useState(null);
-  const { data: execution, isLoading, isError, error } = useExecution(executionId);
-
-  if (isLoading) {
-    return <div className="flex h-full items-center justify-center text-sm text-foreground-muted">Loading run…</div>;
-  }
+  const result = useExecution(executionId);
+  const { data: execution, isLoading, isError, error } = result;
+  const isLive = useExecutionSocket(executionId, RUNNING_STATES.has(execution?.status));
 
   if (isError) {
     return (
@@ -117,6 +116,15 @@ export function ExecutionDetailPage() {
         </Link>
       </div>
     );
+  }
+
+  if (isLoading || !execution) {
+    // Covers plain loading AND the gap between a failed attempt and either a
+    // retry or TanStack Query pausing further retries while it thinks the
+    // network is down (isLoading/isError both false, no data yet) — a real
+    // state a flaky connection can produce, not just a testing artifact.
+    // Rendering nothing here crashed ExecutionsPage in Phase 5; same fix.
+    return <div className="flex h-full items-center justify-center text-sm text-foreground-muted">Loading run…</div>;
   }
 
   const statusStyle = EXECUTION_STATUS_STYLES[execution.status] ?? EXECUTION_STATUS_STYLES.PENDING;
@@ -134,7 +142,13 @@ export function ExecutionDetailPage() {
             {execution.triggeredBy} · started {new Date(execution.startedAt).toLocaleString()}
           </p>
         </div>
-        <span className={["ml-auto rounded-full px-3 py-1 text-xs font-medium", statusStyle.bg, statusStyle.text].join(" ")}>
+        {isLive && (
+          <span className="flex items-center gap-1.5 text-xs font-medium text-status-running" role="status">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-status-running" aria-hidden="true" />
+            Live
+          </span>
+        )}
+        <span className={["rounded-full px-3 py-1 text-xs font-medium", statusStyle.bg, statusStyle.text, !isLive ? "ml-auto" : ""].join(" ")}>
           {statusStyle.label}
         </span>
         <span className="font-mono-token text-sm text-foreground-muted">

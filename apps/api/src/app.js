@@ -2,12 +2,14 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import cookie from "@fastify/cookie";
 import rateLimit from "@fastify/rate-limit";
+import websocket from "@fastify/websocket";
 import { env } from "./config/env.js";
 import { healthRoutes } from "./routes/healthRoutes.js";
 import { authRoutes } from "./routes/authRoutes.js";
 import { workflowRoutes } from "./routes/workflowRoutes.js";
 import { executionRoutes } from "./routes/executionRoutes.js";
 import { aiRoutes } from "./routes/aiRoutes.js";
+import { realtimeRoutes } from "./routes/realtimeRoutes.js";
 
 export async function buildApp() {
   const app = Fastify({
@@ -41,12 +43,14 @@ export async function buildApp() {
     max: 100,
     timeWindow: "1 minute",
   });
+  await app.register(websocket);
 
   await app.register(healthRoutes);
   await app.register(authRoutes);
   await app.register(workflowRoutes);
   await app.register(executionRoutes);
   await app.register(aiRoutes);
+  await app.register(realtimeRoutes);
 
   return app;
 }

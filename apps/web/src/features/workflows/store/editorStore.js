@@ -35,8 +35,9 @@ export const useEditorStore = create((set, get) => ({
   saveState: "saved", // "saved" | "saving" | "unsaved"
   lastSavedAt: null,
   saveRequestId: 0,
+  generatedByAi: false,
 
-  loadGraph: ({ id = null, name, description = "", status = "draft", syncStatus = "local-only", createdAt = null, nodes, edges }) =>
+  loadGraph: ({ id = null, name, description = "", status = "draft", syncStatus = "local-only", createdAt = null, generatedByAi = false, nodes, edges }) =>
     set({
       workflowId: id,
       workflowName: name ?? "Untitled workflow",
@@ -44,6 +45,7 @@ export const useEditorStore = create((set, get) => ({
       workflowStatus: status,
       syncStatus,
       createdAt,
+      generatedByAi,
       nodes: nodes ?? [],
       edges: edges ?? [],
       selectedNodeId: null,
@@ -52,6 +54,8 @@ export const useEditorStore = create((set, get) => ({
       dirty: false,
       saveState: "saved",
     }),
+
+  dismissAiBanner: () => set({ generatedByAi: false, dirty: true, saveState: "unsaved" }),
 
   setWorkflowId: (id) => set({ workflowId: id }),
   setWorkflowName: (name) => set({ workflowName: name, dirty: true, saveState: "unsaved" }),

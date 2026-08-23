@@ -7,6 +7,7 @@ import { healthRoutes } from "./routes/healthRoutes.js";
 import { authRoutes } from "./routes/authRoutes.js";
 import { workflowRoutes } from "./routes/workflowRoutes.js";
 import { executionRoutes } from "./routes/executionRoutes.js";
+import { aiRoutes } from "./routes/aiRoutes.js";
 
 export async function buildApp() {
   const app = Fastify({
@@ -45,6 +46,7 @@ export async function buildApp() {
   await app.register(authRoutes);
   await app.register(workflowRoutes);
   await app.register(executionRoutes);
+  await app.register(aiRoutes);
 
   return app;
 }

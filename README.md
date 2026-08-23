@@ -2,7 +2,7 @@
 
 Visual workflow automation platform — trigger → condition → action graphs, built and monitored on a real execution engine (not a demo).
 
-> **Status:** Phase 5 (Execution Inspector) built and wired to the real backend API. **No Supabase project exists yet**, so the full run-a-workflow path is still unverified end-to-end — see the callout below. AI features land in Phase 6. This README will grow into full documentation at Phase 10.
+> **Status:** Phase 6 (AI node + AI workflow generation) built and verified end-to-end in the browser — with a mocked model, since no OpenRouter key is configured (see below). **No Supabase project exists yet**, so the execution engine itself is still unverified against real data. This README will grow into full documentation at Phase 10.
 
 ## Stack
 
@@ -63,6 +63,22 @@ npm run prisma:migrate --workspace=apps/api
 npm run dev:api
 ```
 
+## AI: architecture and current state
+
+**Architecture matches the brief exactly:** React frontend → Fastify backend → OpenRouter → backend → frontend. `OPENROUTER_API_KEY` lives only in `apps/api/.env` (gitignored) and is read once in `apps/api/src/services/openRouterService.js` — the frontend never sees it, never could see it, and no frontend code references it.
+
+**Without a key configured** (the current state — nobody has supplied one), both AI features return clearly-labeled mocked output rather than silently pretending to call a model:
+- The **AI node**, when a workflow executes, returns `{ mocked: true, note: "...", summary: "[mock] ..." }`.
+- **AI workflow generation** returns a fixed example graph with `meta.mocked: true`, and the dialog shows a visible banner saying so before the user ever opens it in the editor.
+
+**With a key configured**, both call OpenRouter for real: the AI node via `anthropic/claude-3.5-haiku` (configurable per-node) with token/latency accounting, and generation via a system prompt constrained to strict JSON using only the six node types, parsed and schema-validated (`apps/api/src/services/generatedGraphValidator.js`) before ever reaching the frontend — an AI response with an invented node type or malformed structure is rejected, not passed through.
+
+**Verified in-browser (mocked path):** command palette → dialog → generate → preview (name, node/edge count, mock notice) → "Open in editor" → the generated graph loads into a real, editable draft, autosaves locally, and passes the same validator every hand-built workflow does. Confirmed the dialog renders correctly (it lives outside `<main>`, so page-text-only checks miss it — verified via the full accessibility tree instead). Also confirmed a banner-persistence bug: the editor's per-workflow-id remount (the Phase 3 fix) was wiping a naive `useState` "just generated" flag right after the first autosave. Fixed by moving that flag into the persistent editor store and the saved IndexedDB record instead of component state.
+
+**User confirmation before execution:** the brief requires AI-generated workflows never execute silently. FlowPilot doesn't special-case this with an extra dialog — a generated graph lands in the *same* editor as any hand-built one, autosaves as a local draft (not an execution), and requires the same explicit Run click and passing validation as every other workflow. Manual review before running is the existing architecture, not a bolt-on.
+
+**Prompt-injection consideration:** the AI node's `userPromptTemplate` can embed upstream node output (e.g. form submission text) that a user doesn't control. The system prompt explicitly instructs the model to treat that content as data to summarize, never as instructions to follow. More fundamentally, nothing about executing a workflow trusts the AI's output structurally — an HTTP Request node's URL still goes through the SSRF guard, a Notification node's channel is still schema-validated — identically whether the graph came from AI generation or was hand-built.
+
 ## Roadmap
 
 - [x] Phase 1 — Foundation
@@ -70,7 +86,7 @@ npm run dev:api
 - [x] Phase 3 — Local-first (IndexedDB drafts, offline mode, sync)
 - [ ] Phase 4 — Backend workflow execution engine (code-complete, unverified — no live database yet)
 - [ ] Phase 5 — Execution inspector (built, wired to real API, run-a-workflow path untested end-to-end without a database)
-- [ ] Phase 6 — AI node + AI workflow generation
+- [x] Phase 6 — AI node + AI workflow generation (verified end-to-end with a mocked model; real OpenRouter calls unverified — no key configured)
 - [ ] Phase 7 — Realtime execution updates (WebSockets)
 - [ ] Phase 8 — Accessibility, responsive, performance polish
 - [ ] Phase 9 — Tests

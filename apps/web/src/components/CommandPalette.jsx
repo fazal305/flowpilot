@@ -9,8 +9,10 @@ import {
   SunMoon,
   Save,
   Keyboard,
+  Sparkles,
 } from "lucide-react";
 import { useCommandPaletteStore } from "@/stores/commandPaletteStore";
+import { useAiDialogStore } from "@/stores/aiDialogStore";
 import { useThemeStore } from "@/stores/themeStore";
 import { useEditorStore } from "@/features/workflows/store/editorStore";
 import { NODE_DEFINITIONS } from "@/features/workflows/nodeDefinitions";
@@ -23,6 +25,7 @@ export function CommandPalette() {
   const navigate = useNavigate();
   const location = useLocation();
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
+  const setAiDialogOpen = useAiDialogStore((s) => s.setOpen);
   const addNode = useEditorStore((s) => s.addNode);
   const requestImmediateSave = useEditorStore((s) => s.requestImmediateSave);
 
@@ -66,6 +69,9 @@ export function CommandPalette() {
           <Command.Group heading="Navigate" className="px-2 py-1 text-[11px] uppercase tracking-wide text-foreground-muted [&_[cmdk-group-heading]]:px-1 [&_[cmdk-group-heading]]:pb-1">
             <Command.Item onSelect={run(() => navigate("/workflows/new"))} className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm aria-selected:bg-surface-muted">
               <Plus className="h-4 w-4" aria-hidden="true" /> Create workflow
+            </Command.Item>
+            <Command.Item onSelect={run(() => setAiDialogOpen(true))} className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm aria-selected:bg-surface-muted">
+              <Sparkles className="h-4 w-4" aria-hidden="true" /> Generate workflow with AI
             </Command.Item>
             <Command.Item onSelect={run(() => navigate("/workflows"))} className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm aria-selected:bg-surface-muted">
               <Workflow className="h-4 w-4" aria-hidden="true" /> Open workflows

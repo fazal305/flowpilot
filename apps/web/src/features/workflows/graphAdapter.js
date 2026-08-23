@@ -19,3 +19,27 @@ export function toSharedGraph(nodes, edges) {
     })),
   };
 }
+
+/** The reverse of toSharedGraph — used to load a plain graph (a saved
+ * workflow's record, or an AI-generated draft) into the React Flow canvas. */
+export function toReactFlowGraph(sharedGraph) {
+  return {
+    nodes: sharedGraph.nodes.map((n) => ({
+      id: n.id,
+      type: "workflowNode",
+      position: n.position,
+      data: {
+        nodeType: n.type,
+        label: n.label,
+        config: n.config,
+        status: "idle",
+      },
+    })),
+    edges: sharedGraph.edges.map((e) => ({
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      sourceHandle: e.sourceHandle ?? null,
+    })),
+  };
+}

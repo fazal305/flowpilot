@@ -10,6 +10,7 @@ import { LoginPage } from "@/features/auth/LoginPage";
 import { EditorPage } from "@/features/workflows/EditorPage";
 import { ExecutionDetailPage } from "@/features/executions/ExecutionDetailPage";
 import { CommandPalette } from "@/components/CommandPalette";
+import { GenerateWorkflowDialog } from "@/features/ai/GenerateWorkflowDialog";
 import { useHotkeys } from "@/hooks/useHotkeys";
 import { useCommandPaletteStore } from "@/stores/commandPaletteStore";
 import { seedDemoWorkflowsIfEmpty } from "@/lib/demoData";
@@ -50,6 +51,7 @@ export default function App() {
       </Routes>
       <GlobalShortcuts />
       <CommandPalette />
+      <GenerateWorkflowDialog />
     </>
   );
 }

@@ -1,10 +1,12 @@
 import { useEffect, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { ReactFlowProvider } from "@xyflow/react";
 import { useQueryClient } from "@tanstack/react-query";
+import { Sparkles, X } from "lucide-react";
 import { useEditorStore } from "./store/editorStore";
 import { useWorkflow, WORKFLOWS_QUERY_KEY } from "./api/workflowDrafts";
 import { LAST_OPENED_QUERY_KEY, LAST_OPENED_WORKFLOW_KEY } from "./api/preferences";
+import { toReactFlowGraph } from "./graphAdapter";
 import { putWorkflow, setPreference } from "@/lib/db";
 import { useHotkeys } from "@/hooks/useHotkeys";
 import { EditorCanvas } from "./EditorCanvas";
@@ -56,6 +58,7 @@ function useAutosave() {
         status: store.workflowStatus,
         graph: { nodes: store.nodes, edges: store.edges },
         syncStatus: "local-only",
+        generatedByAi: store.generatedByAi,
         createdAt: store.createdAt ?? now,
         updatedAt: now,
       };
@@ -100,6 +103,32 @@ function useAutosave() {
   }, [saveRequestId]);
 }
 
+/** Reads straight from the store (not local component state) because the
+ * editor remounts per workflow id right after an AI draft's first autosave
+ * assigns it a real id — local state would reset on that remount and the
+ * banner would vanish before the user even saw it. */
+function AiGeneratedBanner() {
+  const generatedByAi = useEditorStore((s) => s.generatedByAi);
+  const dismissAiBanner = useEditorStore((s) => s.dismissAiBanner);
+
+  if (!generatedByAi) return null;
+
+  return (
+    <div className="flex items-center gap-2 border-b border-accent/30 bg-accent-soft px-4 py-2 text-sm">
+      <Sparkles className="h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
+      <span>AI-generated draft — review and edit before running it.</span>
+      <button
+        type="button"
+        onClick={dismissAiBanner}
+        aria-label="Dismiss"
+        className="ml-auto rounded p-1 text-foreground-muted hover:bg-surface-muted"
+      >
+        <X className="h-3.5 w-3.5" aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
 function EditorShortcuts() {
   const undo = useEditorStore((s) => s.undo);
   const redo = useEditorStore((s) => s.redo);
@@ -132,15 +161,25 @@ function EditorShortcuts() {
  */
 function EditorPageInner({ routeId }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const loadGraph = useEditorStore((s) => s.loadGraph);
   const isNew = !routeId || routeId === "new";
   const { data: existingWorkflow, isLoading, isError } = useWorkflow(routeId);
+  const generated = isNew ? location.state?.generated : null;
 
   useAutosave();
 
   useEffect(() => {
-    if (isNew) {
+    if (!isNew) return;
+    if (generated) {
+      const { nodes, edges } = toReactFlowGraph(generated.graph);
+      loadGraph({ name: generated.name, description: generated.description, generatedByAi: true, nodes, edges });
+      // Loaded content counts as an edit the user hasn't explicitly saved
+      // yet, so autosave persists it locally like any other draft — but
+      // nothing runs until Run is pressed, same as a hand-built workflow.
+      useEditorStore.setState({ dirty: true, saveState: "unsaved" });
+    } else {
       loadGraph({ name: "Untitled workflow", nodes: [], edges: [] });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -155,6 +194,7 @@ function EditorPageInner({ routeId }) {
         status: existingWorkflow.status,
         syncStatus: existingWorkflow.syncStatus,
         createdAt: existingWorkflow.createdAt,
+        generatedByAi: existingWorkflow.generatedByAi ?? false,
         nodes: existingWorkflow.graph.nodes,
         edges: existingWorkflow.graph.edges,
       });
@@ -194,6 +234,7 @@ function EditorPageInner({ routeId }) {
     <ReactFlowProvider>
       <div className="flex h-screen w-screen flex-col overflow-hidden bg-background text-foreground">
         <Toolbar />
+        <AiGeneratedBanner />
         <div className="flex min-h-0 flex-1">
           <NodePalette />
           <div className="min-w-0 flex-1">

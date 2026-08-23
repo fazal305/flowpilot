@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Workflow, Plus, Search, Copy, Trash2 } from "lucide-react";
+import { Workflow, Plus, Search, Copy, Trash2, Sparkles } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import {
   useWorkflowsList,
   useDeleteWorkflow,
   useDuplicateWorkflow,
 } from "@/features/workflows/api/workflowDrafts";
+import { useAiDialogStore } from "@/stores/aiDialogStore";
 
 const STATUS_STYLES = {
   draft: "bg-surface-muted text-foreground-muted",
@@ -31,6 +32,7 @@ export function WorkflowsPage() {
   const { data: workflows = [], isLoading } = useWorkflowsList();
   const deleteWorkflow = useDeleteWorkflow();
   const duplicateWorkflow = useDuplicateWorkflow();
+  const setAiDialogOpen = useAiDialogStore((s) => s.setOpen);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -47,13 +49,23 @@ export function WorkflowsPage() {
             Trigger → condition → action graphs you've built. Saved to this browser.
           </p>
         </div>
-        <Link
-          to="/workflows/new"
-          className="inline-flex items-center gap-2 rounded-md bg-accent px-3.5 py-2 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          New workflow
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setAiDialogOpen(true)}
+            className="inline-flex items-center gap-2 rounded-md border border-border px-3.5 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
+          >
+            <Sparkles className="h-4 w-4" aria-hidden="true" />
+            Generate with AI
+          </button>
+          <Link
+            to="/workflows/new"
+            className="inline-flex items-center gap-2 rounded-md bg-accent px-3.5 py-2 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            New workflow
+          </Link>
+        </div>
       </div>
 
       {!isLoading && workflows.length > 0 && (

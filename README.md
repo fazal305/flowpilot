@@ -2,7 +2,7 @@
 
 Visual workflow automation platform — trigger → condition → action graphs, built and monitored on a real execution engine (not a demo).
 
-> **Status:** Phase 8 (Accessibility, responsive, performance) done for a scoped, honestly-verified set of real gaps — not an exhaustive audit (see below). This README will grow into full documentation at Phase 10.
+> **Status:** Phase 9 (Tests) — 87 tests across all three workspaces, all passing, covering every unit of pure logic reachable without a live database. This README will grow into full documentation at Phase 10.
 
 ## Stack
 
@@ -107,6 +107,21 @@ The brief's Phase 8 scope is large enough to be its own project. This pass fixed
 
 **Deliberately not attempted in this pass** (real gaps, just not part of this pass's honest scope): a full color-contrast audit against WCAG numbers, screen-reader testing with an actual AT (NVDA/VoiceOver), a systematic reduced-motion audit component-by-component (the global CSS rule in `tokens.css` covers the common case), and virtualization for long lists (none of the current lists are long enough to need it yet).
 
+## Testing
+
+```bash
+npm test   # runs packages/shared, apps/api, then apps/web in sequence
+```
+
+No test framework was added as a dependency — Node 24's built-in `node:test` and `node:assert/strict` cover everything needed here, which fits a codebase already trying not to add dependencies it doesn't need.
+
+**87 tests, all passing:**
+- **`packages/shared`** (12) — workflow graph validation (missing trigger, disconnected nodes, condition branch coverage, cycle detection) and the sync conflict-decision algorithm (push/pull/conflict/none from three version numbers).
+- **`apps/api`** (71) — condition evaluation (every operator, dot-path lookups, missing-path handling), execution graph traversal (adjacency, trigger detection, branch selection, skipped-descendant calculation), the retry/timeout wrapper (mocking `fetch` to prove a failing `httpRequest` node actually retries with backoff and eventually gives up with the right retry count — not just that the code compiles), the SSRF guard (every private IP range, cloud metadata address, IPv6 loopback, localhost — all via IP literals, no real DNS lookups so the suite isn't network-dependent), password hashing and JWT session round-trips, every zod validator (workflow upsert, AI prompt, register/login), and the AI-generated-graph validator (unknown node types rejected, missing config fields backfilled with the same defaults the editor uses, dangling edges dropped).
+- **`apps/web`** (4) — the React-Flow-shape ↔ shared-graph-shape adapter round-trips correctly.
+
+**What isn't covered, and why:** anything that touches Prisma directly — `workflowRepository`, `executionRepository`, `workspaceRepository`, and by extension `executionEngine.js`'s actual database writes — has no automated tests, because there is no database to test against yet. Mocking Prisma to fake success would test the mock, not the code; the honest state is "this logic has been read carefully and matches the schema, and will get real test coverage once a Supabase project exists to run integration tests against." Frontend component/interaction tests (React Testing Library et al.) also aren't included — the interactive behavior (node CRUD, drag/connect, dialogs, keyboard shortcuts) was instead verified by actually driving the running app in a browser during Phases 2–8, which is documented inline in each phase's commit rather than encoded as an automated suite here.
+
 ## Roadmap
 
 - [x] Phase 1 — Foundation
@@ -117,7 +132,7 @@ The brief's Phase 8 scope is large enough to be its own project. This pass fixed
 - [x] Phase 6 — AI node + AI workflow generation (verified end-to-end with a mocked model; real OpenRouter calls unverified — no key configured)
 - [x] Phase 7 — Realtime execution updates (WebSocket route verified live; broadcasts from the execution engine unverified — no database)
 - [x] Phase 8 — Accessibility, responsive, performance (scoped pass — see above for exactly what's covered)
-- [ ] Phase 9 — Tests
+- [x] Phase 9 — Tests (87 passing; DB-touching code untested — no live database yet)
 - [ ] Phase 10 — Production hardening, deployment, full docs
 
 ## License

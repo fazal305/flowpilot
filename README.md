@@ -3,13 +3,15 @@
 A visual workflow automation platform — build trigger → condition → action graphs on a node-based canvas, run them on a real execution engine, and watch each run node-by-node as it happens. Inspired by tools like Zapier and n8n, not a clone of either.
 
 **Live:**
-- Frontend: [flowpilot-fazal305.netlify.app](https://flowpilot-fazal305.netlify.app) — site created, deploy currently blocked by the account's Netlify credit limit (see [Deployment](#deployment)).
-- Backend: not deployed — no Supabase (database) or Fly.io (API host) project exists yet.
+- Frontend: [flowpilot-omega-seven.vercel.app](https://flowpilot-omega-seven.vercel.app) — deployed and verified (dashboard, workflow list, and the editor all load correctly with zero console errors; SPA routing confirmed on a direct load of a nested route).
+- Backend: not deployed — no Supabase (database) or Fly.io (API host) project exists yet, so Run/execution/real-AI features aren't reachable on the live site yet (they fail with a clear inline error rather than hanging).
 - Repository: [github.com/fazal305/flowpilot](https://github.com/fazal305/flowpilot) (public)
+
+*(A Netlify site also exists at `flowpilot-fazal305.netlify.app` but has no deployed content — that account's deploy is blocked by its own credit limit. Vercel is the live one.)*
 
 ## Screenshots
 
-Not included yet — the frontend deploy is blocked (see above), and screenshots of a partially-live app would be more misleading than useful. Run it locally (see [Setup](#setup)) to see it directly; this section will be filled in once the app is live.
+Not included yet — add some by visiting the live link above; this section is a placeholder for them rather than a claim they don't exist for a reason.
 
 ## Product overview
 
@@ -133,13 +135,18 @@ npm test              # all three workspaces' test suites
 
 ## Deployment
 
-**Frontend (Netlify):** a site exists at `flowpilot-fazal305.netlify.app`, linked via `netlify.toml` (`npm install && npm run build --workspace=apps/web`, publishing `apps/web/dist`, with a SPA catch-all redirect for React Router). The first production deploy attempt failed with the account's actual error, not a config problem: `"Account credit usage exceeded - new deploys are blocked until credits are added."` This needs the account owner to add credits/a payment method on Netlify — not something this process can or should do. Once resolved, redeploy with:
+**Frontend (Vercel) — live:** deployed at [flowpilot-omega-seven.vercel.app](https://flowpilot-omega-seven.vercel.app) via `vercel.json` at the repo root (`npm install` from the workspace root so the hoisted `@flowpilot/shared` package resolves correctly, `npm run build --workspace=apps/web`, publishing `apps/web/dist`, with a SPA rewrite so React Router's client-side routes don't 404 on a direct load). Verified after deploy: the dashboard, workflow list, and the code-split editor route all load with zero console errors, and a direct hit on a nested path (`/workflows`) correctly renders instead of 404ing. Redeploy with:
+```bash
+npx vercel deploy --prod --yes
+```
+
+A Netlify site also exists (`flowpilot-fazal305.netlify.app`, configured via `netlify.toml`) but has never successfully deployed — the account's own error, not a config problem: `"Account credit usage exceeded - new deploys are blocked until credits are added."` That needs the account owner to add credits/a payment method on Netlify's side. If it's resolved later, redeploy with:
 ```bash
 netlify deploy --prod --no-build --dir apps/web/dist
 ```
 (run from `apps/web/`, after `npm run build --workspace=apps/web`, to route around a monorepo-detection crash in the current Netlify CLI version when other commands are run from the repo root).
 
-**Backend (Fly.io) + Database (Supabase):** neither has been created — no accounts exist yet for either. Nothing backend-dependent (workflow persistence, execution, real AI calls) can go live until both exist. See the repeated callouts throughout this README and the git history for exactly what has and hasn't been verified as a result.
+**Backend (Fly.io) + Database (Supabase):** neither has been created — no accounts exist yet for either. Nothing backend-dependent (workflow persistence, execution, real AI calls) can go live until both exist — the live Vercel frontend above works for everything local-first (drafts, autosave, offline, the editor, search) and fails with a clear inline error, not a hang, for anything that needs the API. See the repeated callouts throughout this README and the git history for exactly what has and hasn't been verified as a result.
 
 ## Security notes
 
@@ -156,7 +163,7 @@ netlify deploy --prod --no-build --dir apps/web/dist
 This project was built with a deliberate practice: verify claims by actually running the code, not just reading it, and say clearly when something *hasn't* been verified rather than implying it has. The two most consequential open items:
 
 1. **No live database.** No Supabase project exists. Every DB-touching code path (workflow persistence, the execution engine, real AI generation validation against stored data, real Prisma-backed repository logic) has been read carefully, unit-tested wherever the logic is pure enough to isolate, and proven to fail *gracefully* (clear errors, no crashes) when pointed at an unreachable database — but has never produced a correct result against real data. This is the single biggest gap in this project's verification story.
-2. **No live backend deployment.** No Fly.io project exists, and the frontend's Netlify deploy is blocked on the account's credit limit (see [Deployment](#deployment)). The app has only ever been exercised via local dev servers.
+2. **No live backend deployment.** No Fly.io or Supabase project exists. The frontend is live on Vercel (see [Deployment](#deployment)) and works fully for everything local-first; anything routed through the API (Run, execution history, real AI) hasn't been exercised outside local dev servers.
 
 Smaller, specific ones, in case they matter to a reader:
 - Real multi-user authentication isn't wired to the frontend — the login form is UI-only, and the security gap above follows directly from that.
@@ -176,9 +183,9 @@ Smaller, specific ones, in case they matter to a reader:
 - [x] Phase 7 — Realtime execution updates (WebSocket route verified live; broadcasts unverified without a database)
 - [x] Phase 8 — Accessibility, responsive, performance (scoped pass, not an exhaustive audit)
 - [x] Phase 9 — Tests (87 passing; nothing touching Prisma directly)
-- [x] Phase 10 — Production hardening, deployment infrastructure, full documentation (this document) — actual live deployment blocked on Netlify credits and on Fly.io/Supabase accounts not existing
+- [x] Phase 10 — Production hardening, full documentation, and a live frontend deployment on Vercel ([flowpilot-omega-seven.vercel.app](https://flowpilot-omega-seven.vercel.app), verified working) — backend still blocked on Fly.io/Supabase accounts not existing
 
-**Next, once unblocked:** create the Supabase project and run migrations against it; resolve the Netlify credit block and complete the frontend deploy; create a Fly.io project and deploy the backend (after closing the auth gap noted above); wire real authentication into the frontend; add a real `OPENROUTER_API_KEY` and verify the AI paths against the live API.
+**Next, once unblocked:** create the Supabase project and run migrations against it; create a Fly.io project and deploy the backend (after closing the auth gap noted above); point the live Vercel frontend's `VITE_API_URL` at it; wire real authentication into the frontend; add a real `OPENROUTER_API_KEY` and verify the AI paths against the live API.
 
 ## License
 

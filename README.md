@@ -2,7 +2,7 @@
 
 Visual workflow automation platform — trigger → condition → action graphs, built and monitored on a real execution engine (not a demo).
 
-> **Status:** Phase 4 (Backend Execution Engine) code-complete but **not yet run against a live database** — no Supabase project exists yet. See the callout below before trusting any of this. AI features land in Phase 6. This README will grow into full documentation at Phase 10.
+> **Status:** Phase 5 (Execution Inspector) built and wired to the real backend API. **No Supabase project exists yet**, so the full run-a-workflow path is still unverified end-to-end — see the callout below. AI features land in Phase 6. This README will grow into full documentation at Phase 10.
 
 ## Stack
 
@@ -44,11 +44,14 @@ Workflows are drafted straight to IndexedDB (`apps/web/src/lib/db.js`) — every
 
 ⚠️ **This backend has not been run against a real database yet.** There is no Supabase project configured, so nothing in this section has executed against live Postgres — everything below is verified up to the point where a real `DATABASE_URL` becomes required.
 
-**Actually verified:**
-- Every new file passes `node --check` (no syntax errors) and the Fastify server boots cleanly.
-- `/api/health` responds correctly with no database at all.
-- DB-dependent routes (workflow save, execution trigger) fail *gracefully* with a clear 500 and a real Prisma connection error — no crash, no silent hang — when pointed at an unreachable database, which is the actual current state.
-- The pg-boss worker's startup failure is caught and logged (`"execution worker not started"`) rather than crashing the whole server.
+**Actually verified (in-browser, against a running API with no database):**
+- The Fastify server boots, `/api/health` works with no database, and DB-dependent routes fail gracefully (clear 500, no crash) when Postgres is unreachable — this is genuinely the current state, not a simulated one.
+- The frontend's error paths are real, not placeholders: the Executions list and the editor's Run button both surface the actual API error text inline instead of hanging or blanking the screen.
+- The full **Save → Run → navigate to the execution page** flow was exercised against the live (DB-less) API and correctly stopped at "Internal server error." rather than pretending to succeed.
+
+**Two real bugs this testing found and fixed**, worth naming because they'd have been invisible without actually running the code:
+1. `app.setErrorHandler(...)` was registered *after* the route plugins in `app.js`. Fastify gives each `app.register()` call its own encapsulated context that only inherits what the parent had *at registration time* — so the error handler silently never applied to any route, and every unhandled error (including raw Prisma connection strings) was leaking to clients via Fastify's default error serializer instead of our sanitized one. Fixed by moving it before all `register()` calls.
+2. `ExecutionsPage` destructured `useRecentExecutions()`'s `data` without a default, so before the first successful fetch it briefly rendered `undefined.length` and crashed the whole page to blank (caught by the new top-level `ErrorBoundary`, itself added because of this). Fixed with `data: executions = []`, matching the pattern already used elsewhere.
 
 **Written but unverified against real data:** the workflow upsert transaction (replace nodes/edges, bump version), the execution engine's breadth-first traversal and condition-branch skipping, the SSRF guard's DNS-resolution check, and the retry/timeout wrapper around each node executor. The logic has been read through carefully and the shapes match the Prisma schema, but "compiles and the error path is graceful" is not the same claim as "produces a correct execution record" — that requires an actual Postgres instance, which is next once a Supabase project exists.
 
@@ -66,7 +69,7 @@ npm run dev:api
 - [x] Phase 2 — Visual workflow editor (React Flow, undo/redo, command palette)
 - [x] Phase 3 — Local-first (IndexedDB drafts, offline mode, sync)
 - [ ] Phase 4 — Backend workflow execution engine (code-complete, unverified — no live database yet)
-- [ ] Phase 5 — Execution inspector
+- [ ] Phase 5 — Execution inspector (built, wired to real API, run-a-workflow path untested end-to-end without a database)
 - [ ] Phase 6 — AI node + AI workflow generation
 - [ ] Phase 7 — Realtime execution updates (WebSockets)
 - [ ] Phase 8 — Accessibility, responsive, performance polish

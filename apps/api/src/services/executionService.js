@@ -2,8 +2,10 @@ import {
   createPendingExecution,
   getExecutionWithDetail,
   listExecutionsForWorkflow,
+  listRecentExecutions,
 } from "../repositories/executionRepository.js";
 import { enqueueExecution } from "../queue/boss.js";
+import { getDefaultWorkspaceId } from "../repositories/workspaceRepository.js";
 
 export class ExecutionNotFoundError extends Error {
   constructor(id) {
@@ -31,4 +33,9 @@ export async function getExecution(id) {
 
 export function getExecutionHistory(workflowId) {
   return listExecutionsForWorkflow(workflowId);
+}
+
+export async function getRecentExecutions() {
+  const workspaceId = await getDefaultWorkspaceId();
+  return listRecentExecutions(workspaceId);
 }

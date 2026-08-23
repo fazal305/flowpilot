@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Undo2,
@@ -15,6 +15,8 @@ import { useEditorStore } from "./store/editorStore";
 import { toSharedGraph } from "./graphAdapter";
 import { ValidationPanel } from "./ValidationPanel";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { usePublishWorkflow } from "./api/workflowDrafts";
+import { useTriggerExecution } from "@/features/executions/api/executions";
 
 const SAVE_LABEL = {
   saved: "Saved locally",
@@ -24,8 +26,12 @@ const SAVE_LABEL = {
 
 export function Toolbar() {
   const [showIssues, setShowIssues] = useState(false);
+  const [runError, setRunError] = useState(null);
+  const navigate = useNavigate();
+  const workflowId = useEditorStore((s) => s.workflowId);
   const workflowName = useEditorStore((s) => s.workflowName);
   const setWorkflowName = useEditorStore((s) => s.setWorkflowName);
+  const workflowDescription = useEditorStore((s) => s.workflowDescription);
   const workflowStatus = useEditorStore((s) => s.workflowStatus);
   const setWorkflowStatus = useEditorStore((s) => s.setWorkflowStatus);
   const syncStatus = useEditorStore((s) => s.syncStatus);
@@ -37,9 +43,31 @@ export function Toolbar() {
   const redo = useEditorStore((s) => s.redo);
   const saveState = useEditorStore((s) => s.saveState);
 
-  const issues = useMemo(() => validateGraph(toSharedGraph(nodes, edges)), [nodes, edges]);
+  const publishWorkflow = usePublishWorkflow();
+  const triggerExecution = useTriggerExecution();
+  const isRunning = publishWorkflow.isPending || triggerExecution.isPending;
+
+  const graph = useMemo(() => toSharedGraph(nodes, edges), [nodes, edges]);
+  const issues = useMemo(() => validateGraph(graph), [graph]);
   const errorCount = issues.filter((i) => i.level === "error").length;
   const warningCount = issues.filter((i) => i.level === "warning").length;
+
+  async function handleRun() {
+    setRunError(null);
+    try {
+      await publishWorkflow.mutateAsync({
+        id: workflowId,
+        name: workflowName,
+        description: workflowDescription,
+        status: workflowStatus,
+        graph,
+      });
+      const executionId = await triggerExecution.mutateAsync({ workflowId, triggeredBy: "manual" });
+      navigate(`/executions/${executionId}`);
+    } catch (error) {
+      setRunError(error.message ?? "Couldn't start this run.");
+    }
+  }
 
   return (
     <div className="relative flex items-center gap-2 border-b border-border bg-surface px-3 py-2">
@@ -96,10 +124,16 @@ export function Toolbar() {
       </div>
 
       <div className="ml-auto flex items-center gap-3">
+        {runError && (
+          <span className="max-w-xs truncate text-xs text-destructive" title={runError} role="alert">
+            {runError}
+          </span>
+        )}
+
         <OfflineIndicator />
 
         <span
-          title="Server sync arrives once the backend is deployed in Phase 4."
+          title="Server sync happens when you Save or Run — see the README for current backend status."
           className="flex items-center gap-1.5 text-xs text-foreground-muted"
         >
           <CloudOff className="h-3.5 w-3.5" aria-hidden="true" />
@@ -134,11 +168,22 @@ export function Toolbar() {
 
         <button
           type="button"
-          disabled={errorCount > 0}
-          title={errorCount > 0 ? "Fix validation errors before running" : "Execution engine arrives in Phase 4"}
+          onClick={handleRun}
+          disabled={errorCount > 0 || !workflowId || isRunning}
+          title={
+            errorCount > 0
+              ? "Fix validation errors before running"
+              : !workflowId
+                ? "Add a node first"
+                : "Run this workflow now"
+          }
           className="flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          <Play className="h-3.5 w-3.5" aria-hidden="true" />
+          {isRunning ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+          ) : (
+            <Play className="h-3.5 w-3.5" aria-hidden="true" />
+          )}
           Run
         </button>
       </div>

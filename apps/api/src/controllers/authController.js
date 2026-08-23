@@ -7,10 +7,18 @@ import {
 } from "../services/authService.js";
 
 const SESSION_COOKIE = "flowpilot_session";
+const isProduction = process.env.NODE_ENV === "production";
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  sameSite: "lax",
-  secure: process.env.NODE_ENV === "production",
+  // In dev, frontend and backend are both localhost (different ports, same
+  // registrable domain) — "lax" works fine. In production, the frontend
+  // (Netlify) and backend (Fly.io) are genuinely different sites, and a
+  // cross-site fetch() with credentials will NOT include a "lax" cookie at
+  // all — only "none" (which requires "secure") is sent on cross-site
+  // subrequests. Getting this wrong means auth silently never works once
+  // actually deployed to two different domains.
+  sameSite: isProduction ? "none" : "lax",
+  secure: isProduction,
   path: "/",
   maxAge: 60 * 60 * 24 * 7,
 };

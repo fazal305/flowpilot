@@ -1,139 +1,184 @@
 # FlowPilot
 
-Visual workflow automation platform — trigger → condition → action graphs, built and monitored on a real execution engine (not a demo).
+A visual workflow automation platform — build trigger → condition → action graphs on a node-based canvas, run them on a real execution engine, and watch each run node-by-node as it happens. Inspired by tools like Zapier and n8n, not a clone of either.
 
-> **Status:** Phase 9 (Tests) — 87 tests across all three workspaces, all passing, covering every unit of pure logic reachable without a live database. This README will grow into full documentation at Phase 10.
+**Live:**
+- Frontend: [flowpilot-fazal305.netlify.app](https://flowpilot-fazal305.netlify.app) — site created, deploy currently blocked by the account's Netlify credit limit (see [Deployment](#deployment)).
+- Backend: not deployed — no Supabase (database) or Fly.io (API host) project exists yet.
+- Repository: [github.com/fazal305/flowpilot](https://github.com/fazal305/flowpilot) (public)
 
-## Stack
+## Screenshots
 
-- **Frontend:** Vite, React, JavaScript (JSX), Tailwind CSS v4, React Flow, Zustand, TanStack Query, IndexedDB
-- **Backend:** Node.js, Fastify, JavaScript, PostgreSQL via Prisma, pg-boss (Postgres-backed job queue)
-- **AI:** OpenRouter (backend-only — key never reaches the frontend)
-- **Deploy:** Frontend on Netlify, API on Fly.io, database on Supabase
+Not included yet — the frontend deploy is blocked (see above), and screenshots of a partially-live app would be more misleading than useful. Run it locally (see [Setup](#setup)) to see it directly; this section will be filled in once the app is live.
 
-## Project layout
+## Product overview
+
+A workflow is a graph of six node types:
+
+| Category | Node | Does |
+|---|---|---|
+| Trigger | **Webhook** | Starts a run from an inbound HTTP request |
+| Trigger | **Schedule** | Starts a run on a cron schedule |
+| Logic | **Condition** | Branches into True/False paths based on a field comparison |
+| Action | **HTTP Request** | Calls an external endpoint (SSRF-guarded) |
+| Action | **AI** | Summarizes/transforms data via an LLM (OpenRouter) |
+| Action | **Notification** | Sends an in-app, email, or outbound-webhook notification |
+
+Example: a webhook receives a new lead, a condition checks whether their budget exceeds a threshold, and the true/false branches route to different notifications — optionally with an AI node summarizing the lead first. You can also describe a workflow in plain English and have AI generate a first draft graph, which you review and edit like any other workflow before ever running it.
+
+## Architecture
+
+### Frontend
+
+Vite + React (plain JS/JSX, no TypeScript) + Tailwind CSS v4, organized by feature (`src/features/{workflows,executions,ai,auth}`) rather than by file type. State is deliberately split by concern: **Zustand** (`editorStore`) owns transient canvas/editor state (nodes, edges, undo history, save status); **TanStack Query** owns everything that comes from a server or IndexedDB (workflow lists, execution status, AI generation results) with its own cache, retry, and polling behavior. The canvas is [`@xyflow/react`](https://reactflow.dev); custom node components are `React.memo`-wrapped since React Flow re-renders every node on any canvas change.
+
+### Backend
+
+Node.js + Fastify (plain JS), layered as routes → controllers → services → repositories → Prisma. `app.setErrorHandler` is registered *before* any route plugin — Fastify gives each `register()` call its own encapsulated context that only inherits what the parent had *at registration time*, so registering the error handler after routes would have silently left it inapplicable to any of them (a real bug this project hit and fixed; see [Known limitations](#known-limitations-and-honest-status)).
+
+### Workflow execution architecture
 
 ```
-flowpilot/
-  apps/
-    web/     # React frontend
-    api/     # Fastify backend
-  packages/
-    shared/  # node/workflow/execution shapes shared by both apps
+Workflow definition (Prisma: WorkflowNode/WorkflowEdge)
+  → validateGraph() — shared logic, runs identically in the editor and here
+  → pg-boss queue (Postgres-backed — no Redis) enqueues { executionId, workflowId, triggeredBy }
+  → worker (same process as the API — see limitation below) picks up the job
+  → executionEngine walks the graph breadth-first from the trigger node(s)
+      → each node: runNode() wraps its executor with a per-type timeout and,
+        for external-facing types (httpRequest/ai/notification), retry with
+        exponential backoff
+      → a condition node's untaken branch (and everything only reachable
+        through it) is recorded SKIPPED, not silently absent
+  → every node/execution transition writes a row (WorkflowExecution,
+    NodeExecution, ExecutionLog) AND calls a one-line notify() that pushes
+    a "something changed" WebSocket message — the REST endpoint stays the
+    single source of truth for what an execution actually looks like; the
+    socket's only job is telling the frontend to refetch sooner than its
+    4-second poll backstop would
 ```
 
-## Development
+Each run gets a real execution id (`RUN #<id>` in the inspector), with per-node status/duration/input/output and structured logs — this is a real queued/worked execution model, not `setTimeout` pretending to be one.
+
+### Database architecture
+
+PostgreSQL via Prisma. `users` / `workspaces` / `workspace_members` exist in the schema, but the frontend doesn't have real multi-user auth wired up yet (see [Known limitations](#known-limitations-and-honest-status)) — every workflow currently writes against one lazily-created default workspace. `workflow_versions` stores an immutable JSON snapshot of the graph on every save (autosave history / future conflict resolution); `workflow_nodes`/`workflow_edges` are normalized for the *current* version only, which is what the execution engine actually reads. Migrations live in `apps/api/prisma/schema.prisma` — none have been run yet, because no Postgres instance exists (see [Deployment](#deployment)).
+
+### Local-first architecture
+
+```
+Browser → IndexedDB (apps/web/src/lib/db.js) → local workflow draft
+        ↘ (once a backend exists) → sync decision (push/pull/conflict/none)
+                                     from three version numbers
+                                     → server
+```
+
+Every save — including a brand-new workflow's very first autosave — is a real IndexedDB write, not a stub; the editor works fully offline, with a visible offline indicator. `packages/shared/src/sync.js` implements the push/pull/conflict decision algorithm, but nothing calls it yet: there's no server to sync *with* (see [Known limitations](#known-limitations-and-honest-status)). This is deliberately scoped as last-write-wins-with-warning once wired up, not CRDT-based real-time collaborative merging — true concurrent multi-user editing of the same graph is out of scope for this project.
+
+### AI architecture
+
+```
+React frontend → Fastify backend → OpenRouter → backend → frontend
+```
+
+`OPENROUTER_API_KEY` is read once, server-side, in `apps/api/src/services/openRouterService.js` — it is never sent to the frontend and no frontend code references it. Without a key configured (the current state — see [Setup](#environment-variables)), both the AI node and AI workflow generation return clearly-labeled mocked output rather than silently pretending to call a model. With a key, workflow generation constrains the model to strict JSON using only the six node types, then schema-validates and repairs the response (unknown node types rejected, missing config fields backfilled with editor defaults, dangling edges dropped) before it ever reaches the frontend. The AI node's system prompt explicitly instructs the model to treat upstream workflow data as data, not instructions, as basic prompt-injection hardening. A generated workflow is never auto-executed: it loads into the same editor as any hand-built workflow, autosaves as a local draft, and needs the same explicit Run click and passing validation as everything else — review-before-execution is the existing architecture, not a bolt-on dialog.
+
+## Setup
 
 ```bash
+git clone https://github.com/fazal305/flowpilot.git
+cd flowpilot
 npm install
+cp apps/web/.env.example apps/web/.env
+cp apps/api/.env.example apps/api/.env
 npm run dev:web   # http://localhost:5173
-npm run dev:api   # http://localhost:4000
+npm run dev:api   # http://localhost:4000 — works without a database (see below), execution/AI routes will 500 without one
 ```
 
-Copy `apps/web/.env.example` → `apps/web/.env` and `apps/api/.env.example` → `apps/api/.env`, then fill in real values. Never commit `.env`.
+The frontend works fully standalone (drafts, autosave, offline, the editor, local workflow list) with no backend running at all — only Run/AI-generation calls need the API, and those fail with a clear inline error rather than hanging if it's not reachable.
 
-## Local-first: current state and limitations
+## Environment variables
 
-Workflows are drafted straight to IndexedDB (`apps/web/src/lib/db.js`) — every save, including the very first autosave of a brand-new workflow, is a real write to the browser's database, not a stub. The editor works fully offline; an offline badge appears in the toolbar and topbar when the browser goes offline.
+**`apps/web/.env`** (copy from `.env.example`):
+| Variable | Required | Notes |
+|---|---|---|
+| `VITE_API_URL` | No | Defaults to `http://localhost:4000` |
 
-**What's real:** local persistence, autosave, offline detection, duplicate/delete, and a version-comparison algorithm (`packages/shared/src/sync.js`) that decides push/pull/conflict from three version numbers.
+**`apps/api/.env`** (copy from `.env.example`):
+| Variable | Required | Notes |
+|---|---|---|
+| `DATABASE_URL` | For DB features | Postgres connection string (e.g. Supabase) |
+| `JWT_SECRET` | For auth | Random 32+ char string |
+| `WEB_ORIGIN` | For CORS | The frontend's origin |
+| `OPENROUTER_API_KEY` | For real AI | Both AI features run mocked without it |
+| `PORT` | No | Defaults to 4000 |
+| `NODE_ENV` | No | Gates production-only behavior (secure cookies, stricter logging) |
 
-**What's not built yet:** there is no server to sync *with* — that arrives with the backend in Phase 4. Until then every draft's `syncStatus` is `local-only`, and the conflict-resolution algorithm exists but isn't wired to a live comparison. This is deliberately scoped as last-write-wins-with-warning once sync is live, not CRDT-based real-time collaborative merging — true concurrent multi-user editing of the same graph is out of scope for this project.
+Never commit `.env`. `.env.example` files contain safe placeholders only. `apps/api/.env.test` is the one exception — it holds a dummy `JWT_SECRET` used only by the test suite and is safe to commit.
 
-## Execution engine: what's verified and what isn't
+## Development commands
 
-⚠️ **This backend has not been run against a real database yet.** There is no Supabase project configured, so nothing in this section has executed against live Postgres — everything below is verified up to the point where a real `DATABASE_URL` becomes required.
-
-**Actually verified (in-browser, against a running API with no database):**
-- The Fastify server boots, `/api/health` works with no database, and DB-dependent routes fail gracefully (clear 500, no crash) when Postgres is unreachable — this is genuinely the current state, not a simulated one.
-- The frontend's error paths are real, not placeholders: the Executions list and the editor's Run button both surface the actual API error text inline instead of hanging or blanking the screen.
-- The full **Save → Run → navigate to the execution page** flow was exercised against the live (DB-less) API and correctly stopped at "Internal server error." rather than pretending to succeed.
-
-**Two real bugs this testing found and fixed**, worth naming because they'd have been invisible without actually running the code:
-1. `app.setErrorHandler(...)` was registered *after* the route plugins in `app.js`. Fastify gives each `app.register()` call its own encapsulated context that only inherits what the parent had *at registration time* — so the error handler silently never applied to any route, and every unhandled error (including raw Prisma connection strings) was leaking to clients via Fastify's default error serializer instead of our sanitized one. Fixed by moving it before all `register()` calls.
-2. `ExecutionsPage` destructured `useRecentExecutions()`'s `data` without a default, so before the first successful fetch it briefly rendered `undefined.length` and crashed the whole page to blank (caught by the new top-level `ErrorBoundary`, itself added because of this). Fixed with `data: executions = []`, matching the pattern already used elsewhere.
-
-**Written but unverified against real data:** the workflow upsert transaction (replace nodes/edges, bump version), the execution engine's breadth-first traversal and condition-branch skipping, the SSRF guard's DNS-resolution check, and the retry/timeout wrapper around each node executor. The logic has been read through carefully and the shapes match the Prisma schema, but "compiles and the error path is graceful" is not the same claim as "produces a correct execution record" — that requires an actual Postgres instance, which is next once a Supabase project exists.
-
-**To actually run this once you have a Supabase project:**
 ```bash
-# apps/api/.env — set DATABASE_URL to your Supabase connection string, then:
-npm run prisma:generate --workspace=apps/api
-npm run prisma:migrate --workspace=apps/api
-npm run dev:api
+npm run dev:web       # frontend dev server
+npm run dev:api       # backend dev server (--watch)
+npm run build:web     # production frontend build → apps/web/dist
+npm run build:api     # prisma generate (no bundling needed for plain Node)
+npm test              # all three workspaces' test suites
 ```
-
-## AI: architecture and current state
-
-**Architecture matches the brief exactly:** React frontend → Fastify backend → OpenRouter → backend → frontend. `OPENROUTER_API_KEY` lives only in `apps/api/.env` (gitignored) and is read once in `apps/api/src/services/openRouterService.js` — the frontend never sees it, never could see it, and no frontend code references it.
-
-**Without a key configured** (the current state — nobody has supplied one), both AI features return clearly-labeled mocked output rather than silently pretending to call a model:
-- The **AI node**, when a workflow executes, returns `{ mocked: true, note: "...", summary: "[mock] ..." }`.
-- **AI workflow generation** returns a fixed example graph with `meta.mocked: true`, and the dialog shows a visible banner saying so before the user ever opens it in the editor.
-
-**With a key configured**, both call OpenRouter for real: the AI node via `anthropic/claude-3.5-haiku` (configurable per-node) with token/latency accounting, and generation via a system prompt constrained to strict JSON using only the six node types, parsed and schema-validated (`apps/api/src/services/generatedGraphValidator.js`) before ever reaching the frontend — an AI response with an invented node type or malformed structure is rejected, not passed through.
-
-**Verified in-browser (mocked path):** command palette → dialog → generate → preview (name, node/edge count, mock notice) → "Open in editor" → the generated graph loads into a real, editable draft, autosaves locally, and passes the same validator every hand-built workflow does. Confirmed the dialog renders correctly (it lives outside `<main>`, so page-text-only checks miss it — verified via the full accessibility tree instead). Also confirmed a banner-persistence bug: the editor's per-workflow-id remount (the Phase 3 fix) was wiping a naive `useState` "just generated" flag right after the first autosave. Fixed by moving that flag into the persistent editor store and the saved IndexedDB record instead of component state.
-
-**User confirmation before execution:** the brief requires AI-generated workflows never execute silently. FlowPilot doesn't special-case this with an extra dialog — a generated graph lands in the *same* editor as any hand-built one, autosaves as a local draft (not an execution), and requires the same explicit Run click and passing validation as every other workflow. Manual review before running is the existing architecture, not a bolt-on.
-
-**Prompt-injection consideration:** the AI node's `userPromptTemplate` can embed upstream node output (e.g. form submission text) that a user doesn't control. The system prompt explicitly instructs the model to treat that content as data to summarize, never as instructions to follow. More fundamentally, nothing about executing a workflow trusts the AI's output structurally — an HTTP Request node's URL still goes through the SSRF guard, a Notification node's channel is still schema-validated — identically whether the graph came from AI generation or was hand-built.
-
-## Realtime: architecture and current state
-
-Live execution updates use WebSockets specifically because that's the one place in this app where "genuinely adds value" is unambiguous: a running workflow's status changes on the server, on its own timeline, and the person watching the execution page wants to see that the moment it happens rather than on a poll cycle. Nothing else in the app is pushed over WebSockets.
-
-**How it works:** `apps/api/src/realtime/executionHub.js` is an in-memory `Map<executionId, Set<socket>>`. The execution engine calls a one-line `notify(executionId, type)` at each meaningful transition (execution running, each node started/finished, execution finished) — the message carries no payload beyond "something changed," deliberately. The already-correct, already-tested REST endpoint (`GET /api/executions/:id`) stays the single source of truth for what an execution actually looks like; the socket's only job is telling the frontend to go re-fetch it sooner than the 4-second poll backstop would. `useExecutionSocket` on the frontend does exactly that: on any message, invalidate the query.
-
-**Honest architectural limitation:** this only works because the API server and the pg-boss worker run in the same Node process (see `server.js`) — a broadcast from the worker reaches sockets held by that same process's memory. If this were ever horizontally scaled (multiple API instances, or the worker split onto its own machine), a broadcast from one instance would never reach a socket connected to another. Fixing that needs a shared channel across instances (Redis pub/sub, or Postgres `LISTEN`/`NOTIFY`) — not built, because there's only one process today and building a multi-instance fanout mechanism with no way to actually run multiple instances to test it against would be exactly the kind of unverifiable code this project is trying not to write.
-
-**What's verified:** connected directly to `ws://localhost:4000/ws/executions/:id` from a browser tab and confirmed the connection opens and the initial `{"type":"connected"}` acknowledgment arrives — this needs no database. The poll backstop still degrades correctly to a working (if slower) UI if the socket never connects. **What's not verified:** an actual `notify()` call firing during a real execution — that requires the execution engine to run at all, which needs Postgres.
-
-**A real bug found while testing this:** navigating to a nonexistent execution ID surfaced a genuine gap unrelated to WebSockets — `ExecutionDetailPage` had no handling for the state where a query has failed once, isn't retrying yet, and hasn't reached `isError` (TanStack Query's `fetchStatus: "paused"`, which a real flaky connection can produce, not just a test artifact). The page rendered a blank `<main>` in that state. Fixed by treating it the same as the loading state instead of assuming "not loading and not errored" always means "has data."
-
-## Accessibility, responsive, performance: what this pass actually covers
-
-The brief's Phase 8 scope is large enough to be its own project. This pass fixed real, verified gaps rather than attempting exhaustive coverage of every possible item — scoped honestly rather than claiming a full audit that didn't happen.
-
-**Fixed, real gaps:**
-- **No mobile navigation at all.** The Sidebar hides below the `md` breakpoint (correctly — the editor genuinely needs the width), but there was no replacement, so a phone user had zero way to move between Dashboard/Workflows/Executions/Settings. Added a hamburger-triggered drawer (`MobileNav.jsx`).
-- **No focus management in dialogs.** `Dialog.jsx` (used by the AI generator and shortcuts reference) had no focus trap, no initial focus, no focus restoration on close — a keyboard or screen-reader user could tab out behind the overlay. Added `useFocusTrap`, verified: focus moves in on open, Tab cycles within the dialog, closing restores focus to whatever opened it.
-- **Editor on small screens showed a broken, unusably cramped canvas.** Added an explicit notice below 768px pointing back to the (fully usable) workflow list, rather than pretending touch-dragging a node graph on a phone works.
-- **React Flow re-renders every node on any canvas change.** Wrapped the custom node component in `React.memo` — a justified fix given graphs can have several nodes, not blind memoization.
-- **Loading-state flicker.** IndexedDB reads usually resolve in a few milliseconds; showing "Loading…" unconditionally just flashes for a frame. Added `useDelayedFlag` (200ms) so fast loads show nothing and only genuinely slow ones show feedback.
-- **Stale copy.** A few strings still said "arrives in Phase 4" for phases that had since shipped (or, for auth, still accurately describes what's not wired yet) — corrected to describe actual current behavior.
-
-**A real bug found while testing this, unrelated to what was being tested:** verifying the mobile breakpoint transition live exposed that this specific automated browser tool's viewport resize doesn't dispatch either `matchMedia`'s `change` event or `window`'s `resize` event (confirmed directly: `matches` updates correctly, no event fires) — a CDP viewport-override quirk, not real-browser behavior, but `useMediaQuery` only listened for the `change` event. Added a `resize` listener as a fallback for robustness regardless of which environment actually needs it; verified the mobile/desktop transition is otherwise correct by checking fresh mounts at each size.
-
-**Deliberately not attempted in this pass** (real gaps, just not part of this pass's honest scope): a full color-contrast audit against WCAG numbers, screen-reader testing with an actual AT (NVDA/VoiceOver), a systematic reduced-motion audit component-by-component (the global CSS rule in `tokens.css` covers the common case), and virtualization for long lists (none of the current lists are long enough to need it yet).
 
 ## Testing
 
+87 tests (Node's built-in `node:test` — no framework dependency added) across all three workspaces, covering every unit of pure logic reachable without a live database: workflow graph validation and branching, the sync conflict algorithm, every condition operator, execution graph traversal, the retry/timeout wrapper (a mocked `fetch` proves a failing node actually retries with backoff, not just that the code compiles), the SSRF guard against every private IP range via literals (no real DNS, so the suite stays network-independent), password hashing, JWT round-trips, every zod validator, the AI-generated-graph validator, and the frontend's graph-shape adapter.
+
+**Not covered, and why:** anything touching Prisma directly (the repositories, and by extension `executionEngine`'s actual database writes) has no automated tests, because there's no database to test against — mocking Prisma would test the mock, not the code.
+
+## Deployment
+
+**Frontend (Netlify):** a site exists at `flowpilot-fazal305.netlify.app`, linked via `netlify.toml` (`npm install && npm run build --workspace=apps/web`, publishing `apps/web/dist`, with a SPA catch-all redirect for React Router). The first production deploy attempt failed with the account's actual error, not a config problem: `"Account credit usage exceeded - new deploys are blocked until credits are added."` This needs the account owner to add credits/a payment method on Netlify — not something this process can or should do. Once resolved, redeploy with:
 ```bash
-npm test   # runs packages/shared, apps/api, then apps/web in sequence
+netlify deploy --prod --no-build --dir apps/web/dist
 ```
+(run from `apps/web/`, after `npm run build --workspace=apps/web`, to route around a monorepo-detection crash in the current Netlify CLI version when other commands are run from the repo root).
 
-No test framework was added as a dependency — Node 24's built-in `node:test` and `node:assert/strict` cover everything needed here, which fits a codebase already trying not to add dependencies it doesn't need.
+**Backend (Fly.io) + Database (Supabase):** neither has been created — no accounts exist yet for either. Nothing backend-dependent (workflow persistence, execution, real AI calls) can go live until both exist. See the repeated callouts throughout this README and the git history for exactly what has and hasn't been verified as a result.
 
-**87 tests, all passing:**
-- **`packages/shared`** (12) — workflow graph validation (missing trigger, disconnected nodes, condition branch coverage, cycle detection) and the sync conflict-decision algorithm (push/pull/conflict/none from three version numbers).
-- **`apps/api`** (71) — condition evaluation (every operator, dot-path lookups, missing-path handling), execution graph traversal (adjacency, trigger detection, branch selection, skipped-descendant calculation), the retry/timeout wrapper (mocking `fetch` to prove a failing `httpRequest` node actually retries with backoff and eventually gives up with the right retry count — not just that the code compiles), the SSRF guard (every private IP range, cloud metadata address, IPv6 loopback, localhost — all via IP literals, no real DNS lookups so the suite isn't network-dependent), password hashing and JWT session round-trips, every zod validator (workflow upsert, AI prompt, register/login), and the AI-generated-graph validator (unknown node types rejected, missing config fields backfilled with the same defaults the editor uses, dangling edges dropped).
-- **`apps/web`** (4) — the React-Flow-shape ↔ shared-graph-shape adapter round-trips correctly.
+## Security notes
 
-**What isn't covered, and why:** anything that touches Prisma directly — `workflowRepository`, `executionRepository`, `workspaceRepository`, and by extension `executionEngine.js`'s actual database writes — has no automated tests, because there is no database to test against yet. Mocking Prisma to fake success would test the mock, not the code; the honest state is "this logic has been read carefully and matches the schema, and will get real test coverage once a Supabase project exists to run integration tests against." Frontend component/interaction tests (React Testing Library et al.) also aren't included — the interactive behavior (node CRUD, drag/connect, dialogs, keyboard shortcuts) was instead verified by actually driving the running app in a browser during Phases 2–8, which is documented inline in each phase's commit rather than encoded as an automated suite here.
+- Passwords are hashed with argon2id; sessions are JWTs in httpOnly cookies (`SameSite=None; Secure` in production, since frontend and backend are planned to live on different domains — `SameSite=Lax` would silently never send the cookie on a cross-site `fetch()`, a real bug caught and fixed during this pass).
+- The HTTP Request node has an explicit SSRF guard: it resolves the target hostname and rejects RFC1918/loopback/link-local/cloud-metadata addresses (checked via DNS resolution, not just the literal hostname, to catch DNS-rebinding), and does not follow redirects (a classic SSRF bypass).
+- All external input is zod-validated at the API boundary. Prisma parameterizes every query (no raw SQL anywhere in the codebase). No `dangerouslySetInnerHTML`, `eval`, or equivalent exists in the frontend.
+- Global rate limiting (100/min) plus tighter limits on `/api/auth/*` (10/min, brute-force-sensitive) and workflow execution (20/min, since a run can trigger real side effects and, once a key exists, real AI spend).
+- `OPENROUTER_API_KEY`, `DATABASE_URL`, and `JWT_SECRET` exist only in `apps/api/.env` (gitignored) and are never sent to or referenced by the frontend.
+- **Known, unresolved gap:** the workflow/execution/AI routes currently require no authentication at all — only `GET /api/auth/me` is protected. This matches the current scope (single default workspace, no real login flow wired to the frontend), but it means **if the backend is ever deployed publicly with a real `OPENROUTER_API_KEY`, anyone who can reach the API can trigger AI calls that cost real money and read/modify any workflow.** Wiring real per-user auth onto these routes — or at minimum a shared-access gate — should happen *before* any public backend deployment with a live key, not after.
+- One accepted, non-exploitable finding: `npm audit` flags a transitive `deepmerge-ts` vulnerability via `prisma`'s own CLI tooling (a devDependency). It's not reachable through any code this project runs — no user input ever reaches the Prisma CLI — and no fix is available upstream yet.
+
+## Known limitations and honest status
+
+This project was built with a deliberate practice: verify claims by actually running the code, not just reading it, and say clearly when something *hasn't* been verified rather than implying it has. The two most consequential open items:
+
+1. **No live database.** No Supabase project exists. Every DB-touching code path (workflow persistence, the execution engine, real AI generation validation against stored data, real Prisma-backed repository logic) has been read carefully, unit-tested wherever the logic is pure enough to isolate, and proven to fail *gracefully* (clear errors, no crashes) when pointed at an unreachable database — but has never produced a correct result against real data. This is the single biggest gap in this project's verification story.
+2. **No live backend deployment.** No Fly.io project exists, and the frontend's Netlify deploy is blocked on the account's credit limit (see [Deployment](#deployment)). The app has only ever been exercised via local dev servers.
+
+Smaller, specific ones, in case they matter to a reader:
+- Real multi-user authentication isn't wired to the frontend — the login form is UI-only, and the security gap above follows directly from that.
+- Local-first sync is last-write-wins-with-warning, not CRDT-based collaborative merging.
+- The realtime WebSocket hub is in-memory and single-process; it would need a shared channel (Redis pub/sub or Postgres `LISTEN`/`NOTIFY`) to work across more than one API instance.
+- Phase 8's accessibility/responsive/performance pass fixed specific, verified gaps (mobile navigation, dialog focus management, a small-screen editor notice, node re-render memoization, loading-state flicker) rather than attempting an exhaustive audit — no formal contrast audit, no real screen-reader testing, no per-component reduced-motion sweep.
+- No external public API was integrated beyond OpenRouter (which was a named requirement, not a discovery from the public-apis catalog) — the catalog was reviewed and nothing else was judged to genuinely improve the six-node MVP without adding scope for its own sake.
 
 ## Roadmap
 
 - [x] Phase 1 — Foundation
-- [x] Phase 2 — Visual workflow editor (React Flow, undo/redo, command palette)
-- [x] Phase 3 — Local-first (IndexedDB drafts, offline mode, sync)
-- [ ] Phase 4 — Backend workflow execution engine (code-complete, unverified — no live database yet)
-- [ ] Phase 5 — Execution inspector (built, wired to real API, run-a-workflow path untested end-to-end without a database)
-- [x] Phase 6 — AI node + AI workflow generation (verified end-to-end with a mocked model; real OpenRouter calls unverified — no key configured)
-- [x] Phase 7 — Realtime execution updates (WebSocket route verified live; broadcasts from the execution engine unverified — no database)
-- [x] Phase 8 — Accessibility, responsive, performance (scoped pass — see above for exactly what's covered)
-- [x] Phase 9 — Tests (87 passing; DB-touching code untested — no live database yet)
-- [ ] Phase 10 — Production hardening, deployment, full docs
+- [x] Phase 2 — Visual workflow editor
+- [x] Phase 3 — Local-first (IndexedDB, offline, sync algorithm)
+- [x] Phase 4 — Backend execution engine (code-complete, unverified against a live database)
+- [x] Phase 5 — Execution inspector (built, wired to the real API, unverified end-to-end without a database)
+- [x] Phase 6 — AI node + AI workflow generation (verified with a mocked model; real OpenRouter calls unverified)
+- [x] Phase 7 — Realtime execution updates (WebSocket route verified live; broadcasts unverified without a database)
+- [x] Phase 8 — Accessibility, responsive, performance (scoped pass, not an exhaustive audit)
+- [x] Phase 9 — Tests (87 passing; nothing touching Prisma directly)
+- [x] Phase 10 — Production hardening, deployment infrastructure, full documentation (this document) — actual live deployment blocked on Netlify credits and on Fly.io/Supabase accounts not existing
+
+**Next, once unblocked:** create the Supabase project and run migrations against it; resolve the Netlify credit block and complete the frontend deploy; create a Fly.io project and deploy the backend (after closing the auth gap noted above); wire real authentication into the frontend; add a real `OPENROUTER_API_KEY` and verify the AI paths against the live API.
 
 ## License
 

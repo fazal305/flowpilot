@@ -1,0 +1,15 @@
+# No `base` set deliberately — this is an npm workspaces monorepo, and
+# dependencies (including the @flowpilot/shared workspace package) are
+# hoisted to the repo root's node_modules. Scoping the build to apps/web
+# via `base` would run `npm install` there in isolation and never see them.
+[build]
+  command = "npm install && npm run build --workspace=apps/web"
+  publish = "apps/web/dist"
+
+# Client-side routing (React Router) — without this, a direct load or
+# refresh on any non-root path (e.g. /workflows) 404s at the CDN before
+# React Router ever gets a chance to handle it.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

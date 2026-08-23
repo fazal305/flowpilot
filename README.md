@@ -2,7 +2,7 @@
 
 Visual workflow automation platform — trigger → condition → action graphs, built and monitored on a real execution engine (not a demo).
 
-> **Status:** Phase 6 (AI node + AI workflow generation) built and verified end-to-end in the browser — with a mocked model, since no OpenRouter key is configured (see below). **No Supabase project exists yet**, so the execution engine itself is still unverified against real data. This README will grow into full documentation at Phase 10.
+> **Status:** Phase 7 (Realtime execution updates) built — the WebSocket route itself is verified live; the broadcast calls inside the execution engine are unverified along with everything else that needs a real database (see below). This README will grow into full documentation at Phase 10.
 
 ## Stack
 
@@ -79,6 +79,18 @@ npm run dev:api
 
 **Prompt-injection consideration:** the AI node's `userPromptTemplate` can embed upstream node output (e.g. form submission text) that a user doesn't control. The system prompt explicitly instructs the model to treat that content as data to summarize, never as instructions to follow. More fundamentally, nothing about executing a workflow trusts the AI's output structurally — an HTTP Request node's URL still goes through the SSRF guard, a Notification node's channel is still schema-validated — identically whether the graph came from AI generation or was hand-built.
 
+## Realtime: architecture and current state
+
+Live execution updates use WebSockets specifically because that's the one place in this app where "genuinely adds value" is unambiguous: a running workflow's status changes on the server, on its own timeline, and the person watching the execution page wants to see that the moment it happens rather than on a poll cycle. Nothing else in the app is pushed over WebSockets.
+
+**How it works:** `apps/api/src/realtime/executionHub.js` is an in-memory `Map<executionId, Set<socket>>`. The execution engine calls a one-line `notify(executionId, type)` at each meaningful transition (execution running, each node started/finished, execution finished) — the message carries no payload beyond "something changed," deliberately. The already-correct, already-tested REST endpoint (`GET /api/executions/:id`) stays the single source of truth for what an execution actually looks like; the socket's only job is telling the frontend to go re-fetch it sooner than the 4-second poll backstop would. `useExecutionSocket` on the frontend does exactly that: on any message, invalidate the query.
+
+**Honest architectural limitation:** this only works because the API server and the pg-boss worker run in the same Node process (see `server.js`) — a broadcast from the worker reaches sockets held by that same process's memory. If this were ever horizontally scaled (multiple API instances, or the worker split onto its own machine), a broadcast from one instance would never reach a socket connected to another. Fixing that needs a shared channel across instances (Redis pub/sub, or Postgres `LISTEN`/`NOTIFY`) — not built, because there's only one process today and building a multi-instance fanout mechanism with no way to actually run multiple instances to test it against would be exactly the kind of unverifiable code this project is trying not to write.
+
+**What's verified:** connected directly to `ws://localhost:4000/ws/executions/:id` from a browser tab and confirmed the connection opens and the initial `{"type":"connected"}` acknowledgment arrives — this needs no database. The poll backstop still degrades correctly to a working (if slower) UI if the socket never connects. **What's not verified:** an actual `notify()` call firing during a real execution — that requires the execution engine to run at all, which needs Postgres.
+
+**A real bug found while testing this:** navigating to a nonexistent execution ID surfaced a genuine gap unrelated to WebSockets — `ExecutionDetailPage` had no handling for the state where a query has failed once, isn't retrying yet, and hasn't reached `isError` (TanStack Query's `fetchStatus: "paused"`, which a real flaky connection can produce, not just a test artifact). The page rendered a blank `<main>` in that state. Fixed by treating it the same as the loading state instead of assuming "not loading and not errored" always means "has data."
+
 ## Roadmap
 
 - [x] Phase 1 — Foundation
@@ -87,7 +99,7 @@ npm run dev:api
 - [ ] Phase 4 — Backend workflow execution engine (code-complete, unverified — no live database yet)
 - [ ] Phase 5 — Execution inspector (built, wired to real API, run-a-workflow path untested end-to-end without a database)
 - [x] Phase 6 — AI node + AI workflow generation (verified end-to-end with a mocked model; real OpenRouter calls unverified — no key configured)
-- [ ] Phase 7 — Realtime execution updates (WebSockets)
+- [x] Phase 7 — Realtime execution updates (WebSocket route verified live; broadcasts from the execution engine unverified — no database)
 - [ ] Phase 8 — Accessibility, responsive, performance polish
 - [ ] Phase 9 — Tests
 - [ ] Phase 10 — Production hardening, deployment, full docs

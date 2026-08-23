@@ -38,3 +38,10 @@
   --radius-lg: var(--radius-lg);
   --radius-xl: var(--radius-xl);
 }
+
+[cmdk-overlay] {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.5);
+}

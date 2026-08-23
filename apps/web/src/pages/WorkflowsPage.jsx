@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Workflow, Plus } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 
@@ -11,18 +12,26 @@ export function WorkflowsPage() {
             Trigger → condition → action graphs you've built.
           </p>
         </div>
-        <button
-          type="button"
+        <Link
+          to="/workflows/new"
           className="inline-flex items-center gap-2 rounded-md bg-accent px-3.5 py-2 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90"
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
           New workflow
-        </button>
+        </Link>
       </div>
       <EmptyState
         icon={Workflow}
-        title="No workflows yet"
-        description="The visual editor arrives in the next build phase. This list will show your saved workflows, their status, and last run."
+        title="No saved workflows yet"
+        description="Workflows you build in the editor will be saved and listed here once persistence lands in Phase 3."
+        action={
+          <Link
+            to="/workflows/new"
+            className="mt-2 inline-flex items-center gap-2 rounded-md border border-border px-3.5 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
+          >
+            Open the editor
+          </Link>
+        }
       />
     </div>
   );

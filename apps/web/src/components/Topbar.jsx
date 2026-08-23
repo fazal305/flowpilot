@@ -1,14 +1,17 @@
 import { Sun, Moon, Search } from "lucide-react";
 import { useThemeStore } from "@/stores/themeStore";
+import { useCommandPaletteStore } from "@/stores/commandPaletteStore";
 
 export function Topbar() {
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
+  const openCommandPalette = useCommandPaletteStore((s) => s.setOpen);
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-border bg-surface px-4 md:px-6">
       <button
         type="button"
+        onClick={() => openCommandPalette(true)}
         className="flex w-full max-w-sm items-center gap-2 rounded-md border border-border bg-surface-muted px-3 py-1.5 text-sm text-foreground-muted transition-colors hover:border-border-strong"
         aria-label="Search workflows and executions"
       >

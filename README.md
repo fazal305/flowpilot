@@ -2,7 +2,7 @@
 
 Visual workflow automation platform — trigger → condition → action graphs, built and monitored on a real execution engine (not a demo).
 
-> **Status:** Phase 1 (Foundation) complete. The workflow editor, execution engine, local-first sync, and AI features land in later phases — see the roadmap below. This README will grow into full documentation at Phase 10.
+> **Status:** Phase 2 (Visual Workflow Editor) complete. The execution engine, local-first sync, and AI features land in later phases — see the roadmap below. This README will grow into full documentation at Phase 10.
 
 ## Stack
 
@@ -34,8 +34,8 @@ Copy `apps/web/.env.example` → `apps/web/.env` and `apps/api/.env.example` →
 
 ## Roadmap
 
-- [x] Phase 1 — Foundation (this commit)
-- [ ] Phase 2 — Visual workflow editor (React Flow, undo/redo, command palette)
+- [x] Phase 1 — Foundation
+- [x] Phase 2 — Visual workflow editor (React Flow, undo/redo, command palette)
 - [ ] Phase 3 — Local-first (IndexedDB drafts, offline mode, sync)
 - [ ] Phase 4 — Backend workflow execution engine
 - [ ] Phase 5 — Execution inspector

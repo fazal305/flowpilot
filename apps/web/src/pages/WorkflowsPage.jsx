@@ -8,6 +8,7 @@ import {
   useDuplicateWorkflow,
 } from "@/features/workflows/api/workflowDrafts";
 import { useAiDialogStore } from "@/stores/aiDialogStore";
+import { useDelayedFlag } from "@/hooks/useDelayedFlag";
 
 const STATUS_STYLES = {
   draft: "bg-surface-muted text-foreground-muted",
@@ -33,6 +34,7 @@ export function WorkflowsPage() {
   const deleteWorkflow = useDeleteWorkflow();
   const duplicateWorkflow = useDuplicateWorkflow();
   const setAiDialogOpen = useAiDialogStore((s) => s.setOpen);
+  const showLoading = useDelayedFlag(isLoading);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -85,7 +87,7 @@ export function WorkflowsPage() {
       )}
 
       {isLoading ? (
-        <div className="px-6 py-6 text-sm text-foreground-muted">Loading workflows…</div>
+        showLoading && <div className="px-6 py-6 text-sm text-foreground-muted">Loading workflows…</div>
       ) : workflows.length === 0 ? (
         <EmptyState
           icon={Workflow}

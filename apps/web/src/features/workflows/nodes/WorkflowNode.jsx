@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Handle, Position } from "@xyflow/react";
 import { NODE_DEFINITIONS, nodeSummary } from "../nodeDefinitions";
 
@@ -19,7 +20,14 @@ const STATUS_DOT = {
 const HANDLE_BASE =
   "!h-2.5 !w-2.5 !rounded-full !border-2 !border-surface !bg-border-strong";
 
-export function WorkflowNode({ data, selected }) {
+/**
+ * React Flow re-renders every node component whenever the `nodes` array
+ * reference changes — which happens on any drag, add, or edit anywhere on
+ * the canvas, not just to the node that actually changed. Memoizing means a
+ * given node only re-renders when its own `data`/`selected` props change,
+ * which matters once a graph has more than a handful of nodes.
+ */
+export const WorkflowNode = memo(function WorkflowNode({ data, selected }) {
   const def = NODE_DEFINITIONS[data.nodeType];
   const Icon = def.icon;
   const styles = CATEGORY_STYLES[def.category];
@@ -83,4 +91,4 @@ export function WorkflowNode({ data, selected }) {
       )}
     </div>
   );
-}
+});

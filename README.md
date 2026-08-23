@@ -2,7 +2,7 @@
 
 Visual workflow automation platform — trigger → condition → action graphs, built and monitored on a real execution engine (not a demo).
 
-> **Status:** Phase 7 (Realtime execution updates) built — the WebSocket route itself is verified live; the broadcast calls inside the execution engine are unverified along with everything else that needs a real database (see below). This README will grow into full documentation at Phase 10.
+> **Status:** Phase 8 (Accessibility, responsive, performance) done for a scoped, honestly-verified set of real gaps — not an exhaustive audit (see below). This README will grow into full documentation at Phase 10.
 
 ## Stack
 
@@ -91,6 +91,22 @@ Live execution updates use WebSockets specifically because that's the one place 
 
 **A real bug found while testing this:** navigating to a nonexistent execution ID surfaced a genuine gap unrelated to WebSockets — `ExecutionDetailPage` had no handling for the state where a query has failed once, isn't retrying yet, and hasn't reached `isError` (TanStack Query's `fetchStatus: "paused"`, which a real flaky connection can produce, not just a test artifact). The page rendered a blank `<main>` in that state. Fixed by treating it the same as the loading state instead of assuming "not loading and not errored" always means "has data."
 
+## Accessibility, responsive, performance: what this pass actually covers
+
+The brief's Phase 8 scope is large enough to be its own project. This pass fixed real, verified gaps rather than attempting exhaustive coverage of every possible item — scoped honestly rather than claiming a full audit that didn't happen.
+
+**Fixed, real gaps:**
+- **No mobile navigation at all.** The Sidebar hides below the `md` breakpoint (correctly — the editor genuinely needs the width), but there was no replacement, so a phone user had zero way to move between Dashboard/Workflows/Executions/Settings. Added a hamburger-triggered drawer (`MobileNav.jsx`).
+- **No focus management in dialogs.** `Dialog.jsx` (used by the AI generator and shortcuts reference) had no focus trap, no initial focus, no focus restoration on close — a keyboard or screen-reader user could tab out behind the overlay. Added `useFocusTrap`, verified: focus moves in on open, Tab cycles within the dialog, closing restores focus to whatever opened it.
+- **Editor on small screens showed a broken, unusably cramped canvas.** Added an explicit notice below 768px pointing back to the (fully usable) workflow list, rather than pretending touch-dragging a node graph on a phone works.
+- **React Flow re-renders every node on any canvas change.** Wrapped the custom node component in `React.memo` — a justified fix given graphs can have several nodes, not blind memoization.
+- **Loading-state flicker.** IndexedDB reads usually resolve in a few milliseconds; showing "Loading…" unconditionally just flashes for a frame. Added `useDelayedFlag` (200ms) so fast loads show nothing and only genuinely slow ones show feedback.
+- **Stale copy.** A few strings still said "arrives in Phase 4" for phases that had since shipped (or, for auth, still accurately describes what's not wired yet) — corrected to describe actual current behavior.
+
+**A real bug found while testing this, unrelated to what was being tested:** verifying the mobile breakpoint transition live exposed that this specific automated browser tool's viewport resize doesn't dispatch either `matchMedia`'s `change` event or `window`'s `resize` event (confirmed directly: `matches` updates correctly, no event fires) — a CDP viewport-override quirk, not real-browser behavior, but `useMediaQuery` only listened for the `change` event. Added a `resize` listener as a fallback for robustness regardless of which environment actually needs it; verified the mobile/desktop transition is otherwise correct by checking fresh mounts at each size.
+
+**Deliberately not attempted in this pass** (real gaps, just not part of this pass's honest scope): a full color-contrast audit against WCAG numbers, screen-reader testing with an actual AT (NVDA/VoiceOver), a systematic reduced-motion audit component-by-component (the global CSS rule in `tokens.css` covers the common case), and virtualization for long lists (none of the current lists are long enough to need it yet).
+
 ## Roadmap
 
 - [x] Phase 1 — Foundation
@@ -100,7 +116,7 @@ Live execution updates use WebSockets specifically because that's the one place 
 - [ ] Phase 5 — Execution inspector (built, wired to real API, run-a-workflow path untested end-to-end without a database)
 - [x] Phase 6 — AI node + AI workflow generation (verified end-to-end with a mocked model; real OpenRouter calls unverified — no key configured)
 - [x] Phase 7 — Realtime execution updates (WebSocket route verified live; broadcasts from the execution engine unverified — no database)
-- [ ] Phase 8 — Accessibility, responsive, performance polish
+- [x] Phase 8 — Accessibility, responsive, performance (scoped pass — see above for exactly what's covered)
 - [ ] Phase 9 — Tests
 - [ ] Phase 10 — Production hardening, deployment, full docs
 

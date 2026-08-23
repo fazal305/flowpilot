@@ -1,15 +1,25 @@
-import { Sun, Moon, Search } from "lucide-react";
+import { Sun, Moon, Search, Menu } from "lucide-react";
 import { useThemeStore } from "@/stores/themeStore";
 import { useCommandPaletteStore } from "@/stores/commandPaletteStore";
+import { useMobileNavStore } from "@/stores/mobileNavStore";
 import { OfflineIndicator } from "./OfflineIndicator";
 
 export function Topbar() {
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
   const openCommandPalette = useCommandPaletteStore((s) => s.setOpen);
+  const openMobileNav = useMobileNavStore((s) => s.setOpen);
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-border bg-surface px-4 md:px-6">
+    <header className="flex h-14 items-center gap-2 border-b border-border bg-surface px-4 md:px-6">
+      <button
+        type="button"
+        onClick={() => openMobileNav(true)}
+        aria-label="Open navigation"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-muted hover:text-foreground md:hidden"
+      >
+        <Menu className="h-4.5 w-4.5" aria-hidden="true" />
+      </button>
       <button
         type="button"
         onClick={() => openCommandPalette(true)}

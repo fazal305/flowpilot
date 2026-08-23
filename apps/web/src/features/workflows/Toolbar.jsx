@@ -8,14 +8,16 @@ import {
   AlertTriangle,
   CheckCircle2,
   Loader2,
+  CloudOff,
 } from "lucide-react";
-import { validateGraph } from "@flowpilot/shared";
+import { validateGraph, WORKFLOW_STATUSES } from "@flowpilot/shared";
 import { useEditorStore } from "./store/editorStore";
 import { toSharedGraph } from "./graphAdapter";
 import { ValidationPanel } from "./ValidationPanel";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 
 const SAVE_LABEL = {
-  saved: "Saved",
+  saved: "Saved locally",
   saving: "Saving…",
   unsaved: "Unsaved changes",
 };
@@ -24,6 +26,9 @@ export function Toolbar() {
   const [showIssues, setShowIssues] = useState(false);
   const workflowName = useEditorStore((s) => s.workflowName);
   const setWorkflowName = useEditorStore((s) => s.setWorkflowName);
+  const workflowStatus = useEditorStore((s) => s.workflowStatus);
+  const setWorkflowStatus = useEditorStore((s) => s.setWorkflowStatus);
+  const syncStatus = useEditorStore((s) => s.syncStatus);
   const nodes = useEditorStore((s) => s.nodes);
   const edges = useEditorStore((s) => s.edges);
   const past = useEditorStore((s) => s.past);
@@ -56,6 +61,17 @@ export function Toolbar() {
         className="rounded-md bg-transparent px-2 py-1.5 text-sm font-medium outline-none focus-visible:bg-surface-muted"
       />
 
+      <select
+        value={workflowStatus}
+        onChange={(e) => setWorkflowStatus(e.target.value)}
+        aria-label="Workflow status"
+        className="rounded-md border border-border bg-surface-muted px-2 py-1 text-xs capitalize text-foreground-muted outline-none focus-visible:border-accent"
+      >
+        {WORKFLOW_STATUSES.map((status) => (
+          <option key={status} value={status}>{status}</option>
+        ))}
+      </select>
+
       <div className="ml-2 flex items-center gap-1">
         <button
           type="button"
@@ -80,6 +96,16 @@ export function Toolbar() {
       </div>
 
       <div className="ml-auto flex items-center gap-3">
+        <OfflineIndicator />
+
+        <span
+          title="Server sync arrives once the backend is deployed in Phase 4."
+          className="flex items-center gap-1.5 text-xs text-foreground-muted"
+        >
+          <CloudOff className="h-3.5 w-3.5" aria-hidden="true" />
+          {syncStatus === "local-only" ? "Local only" : syncStatus}
+        </span>
+
         <div className="flex items-center gap-1.5 text-xs text-foreground-muted" role="status">
           {saveState === "saving" ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />

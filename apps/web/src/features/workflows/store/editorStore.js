@@ -20,7 +20,12 @@ function cloneGraph(nodes, edges) {
 }
 
 export const useEditorStore = create((set, get) => ({
+  workflowId: null,
   workflowName: "Untitled workflow",
+  workflowDescription: "",
+  workflowStatus: "draft",
+  createdAt: null,
+  syncStatus: "local-only",
   nodes: [],
   edges: [],
   selectedNodeId: null,
@@ -29,10 +34,16 @@ export const useEditorStore = create((set, get) => ({
   dirty: false,
   saveState: "saved", // "saved" | "saving" | "unsaved"
   lastSavedAt: null,
+  saveRequestId: 0,
 
-  loadGraph: ({ name, nodes, edges }) =>
+  loadGraph: ({ id = null, name, description = "", status = "draft", syncStatus = "local-only", createdAt = null, nodes, edges }) =>
     set({
+      workflowId: id,
       workflowName: name ?? "Untitled workflow",
+      workflowDescription: description,
+      workflowStatus: status,
+      syncStatus,
+      createdAt,
       nodes: nodes ?? [],
       edges: edges ?? [],
       selectedNodeId: null,
@@ -42,7 +53,9 @@ export const useEditorStore = create((set, get) => ({
       saveState: "saved",
     }),
 
+  setWorkflowId: (id) => set({ workflowId: id }),
   setWorkflowName: (name) => set({ workflowName: name, dirty: true, saveState: "unsaved" }),
+  setWorkflowStatus: (status) => set({ workflowStatus: status, dirty: true, saveState: "unsaved" }),
 
   commitHistory: () => {
     const { nodes, edges, past } = get();
@@ -55,6 +68,12 @@ export const useEditorStore = create((set, get) => ({
   onNodesChange: (changes) => {
     const hasRemoval = changes.some((c) => c.type === "remove");
     if (hasRemoval) get().commitHistory();
+    // React Flow also emits "dimensions" (layout measurement) and "select"
+    // changes — neither represents an actual edit, so they shouldn't dirty
+    // the workflow or wake up autosave.
+    const isMeaningful = changes.some(
+      (c) => c.type === "remove" || c.type === "position" || c.type === "add" || c.type === "replace"
+    );
     set((s) => {
       const removedIds = changes
         .filter((c) => c.type === "remove")
@@ -64,8 +83,7 @@ export const useEditorStore = create((set, get) => ({
         selectedNodeId: removedIds.includes(s.selectedNodeId)
           ? null
           : s.selectedNodeId,
-        dirty: true,
-        saveState: "unsaved",
+        ...(isMeaningful ? { dirty: true, saveState: "unsaved" } : null),
       };
     });
   },
@@ -73,10 +91,10 @@ export const useEditorStore = create((set, get) => ({
   onEdgesChange: (changes) => {
     const hasRemoval = changes.some((c) => c.type === "remove");
     if (hasRemoval) get().commitHistory();
+    const isMeaningful = changes.some((c) => c.type !== "select");
     set((s) => ({
       edges: applyEdgeChanges(changes, s.edges),
-      dirty: true,
-      saveState: "unsaved",
+      ...(isMeaningful ? { dirty: true, saveState: "unsaved" } : null),
     }));
   },
 
@@ -207,6 +225,8 @@ export const useEditorStore = create((set, get) => ({
       saveState: "unsaved",
     });
   },
+
+  requestImmediateSave: () => set((s) => ({ saveRequestId: s.saveRequestId + 1 })),
 
   beginSaving: () => set({ saveState: "saving" }),
   markSaved: () =>

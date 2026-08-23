@@ -1,0 +1,40 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+/* Bridge CSS variables into Tailwind v4's theme so utilities like bg-surface,
+   text-foreground-muted, border-border, etc. are generated from our tokens
+   instead of Tailwind's default palette. */
+@theme inline {
+  --color-background: var(--color-background);
+  --color-surface: var(--color-surface);
+  --color-surface-raised: var(--color-surface-raised);
+  --color-surface-muted: var(--color-surface-muted);
+  --color-foreground: var(--color-foreground);
+  --color-foreground-muted: var(--color-foreground-muted);
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+  --color-accent: var(--color-accent);
+  --color-accent-foreground: var(--color-accent-foreground);
+  --color-accent-soft: var(--color-accent-soft);
+  --color-destructive: var(--color-destructive);
+  --color-destructive-foreground: var(--color-destructive-foreground);
+  --color-ring: var(--color-ring);
+
+  --color-node-trigger: var(--node-trigger);
+  --color-node-logic: var(--node-logic);
+  --color-node-action: var(--node-action);
+
+  --color-status-success: var(--status-success);
+  --color-status-error: var(--status-error);
+  --color-status-running: var(--status-running);
+  --color-status-pending: var(--status-pending);
+  --color-status-skipped: var(--status-skipped);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+}

@@ -1,0 +1,231 @@
+// FlowPilot database schema.
+// Postgres-hosted (Supabase). Run `npm run prisma:migrate --workspace=apps/api`
+// once DATABASE_URL points at a real database.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships WorkspaceMember[]
+
+  @@map("users")
+}
+
+model Workspace {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members       WorkspaceMember[]
+  workflows     Workflow[]
+  notifications Notification[]
+
+  @@map("workspaces")
+}
+
+enum WorkspaceRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+model WorkspaceMember {
+  id          String        @id @default(uuid())
+  workspaceId String
+  userId      String
+  role        WorkspaceRole @default(EDITOR)
+  createdAt   DateTime      @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@map("workspace_members")
+}
+
+enum WorkflowStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+}
+
+model Workflow {
+  id          String         @id @default(uuid())
+  workspaceId String
+  name        String
+  description String         @default("")
+  status      WorkflowStatus @default(DRAFT)
+  /// version number of the currently published graph
+  currentVersion Int         @default(1)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  workspace  Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  versions   WorkflowVersion[]
+  nodes      WorkflowNode[]
+  edges      WorkflowEdge[]
+  executions WorkflowExecution[]
+
+  @@index([workspaceId])
+  @@map("workflows")
+}
+
+/// Immutable snapshot of the node/edge graph at save time — powers autosave
+/// history and version-conflict detection for local-first sync.
+model WorkflowVersion {
+  id         String   @id @default(uuid())
+  workflowId String
+  version    Int
+  graph      Json
+  createdAt  DateTime @default(now())
+  createdBy  String?
+
+  workflow Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@unique([workflowId, version])
+  @@map("workflow_versions")
+}
+
+/// Normalized nodes for the *current* published version only — this is what
+/// the execution parser reads. Draft/history graphs live in WorkflowVersion.graph.
+model WorkflowNode {
+  id         String @id @default(uuid())
+  workflowId String
+  nodeKey    String // stable id used inside the graph JSON / React Flow
+  type       String
+  label      String
+  positionX  Float
+  positionY  Float
+  config     Json
+
+  workflow Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@unique([workflowId, nodeKey])
+  @@map("workflow_nodes")
+}
+
+model WorkflowEdge {
+  id            String  @id @default(uuid())
+  workflowId    String
+  edgeKey       String
+  sourceNodeKey String
+  targetNodeKey String
+  sourceHandle  String?
+
+  workflow Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@unique([workflowId, edgeKey])
+  @@map("workflow_edges")
+}
+
+enum ExecutionStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+  SKIPPED
+}
+
+enum ExecutionTrigger {
+  MANUAL
+  WEBHOOK
+  SCHEDULE
+  RETRY
+}
+
+model WorkflowExecution {
+  id          String           @id @default(uuid())
+  workflowId  String
+  status      ExecutionStatus  @default(PENDING)
+  triggeredBy ExecutionTrigger
+  startedAt   DateTime         @default(now())
+  finishedAt  DateTime?
+  durationMs  Int?
+
+  workflow       Workflow        @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  nodeExecutions NodeExecution[]
+  logs           ExecutionLog[]
+
+  @@index([workflowId])
+  @@map("workflow_executions")
+}
+
+model NodeExecution {
+  id          String          @id @default(uuid())
+  executionId String
+  nodeKey     String
+  nodeType    String
+  status      ExecutionStatus @default(PENDING)
+  input       Json?
+  output      Json?
+  errorType   String?
+  errorMessage String?
+  retryCount  Int             @default(0)
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  durationMs  Int?
+
+  execution WorkflowExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+
+  @@index([executionId])
+  @@map("node_executions")
+}
+
+enum LogLevel {
+  DEBUG
+  INFO
+  WARN
+  ERROR
+}
+
+model ExecutionLog {
+  id          String   @id @default(uuid())
+  executionId String
+  nodeKey     String?
+  level       LogLevel @default(INFO)
+  message     String
+  createdAt   DateTime @default(now())
+
+  execution WorkflowExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+
+  @@index([executionId])
+  @@map("execution_logs")
+}
+
+enum NotificationType {
+  WORKFLOW_SUCCEEDED
+  WORKFLOW_FAILED
+  SYNC_CONFLICT
+  AI_WORKFLOW_GENERATED
+  SYSTEM
+}
+
+model Notification {
+  id          String           @id @default(uuid())
+  workspaceId String
+  type        NotificationType
+  title       String
+  body        String
+  readAt      DateTime?
+  createdAt   DateTime         @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@map("notifications")
+}

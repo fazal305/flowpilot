@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { AppShell } from "@/app/AppShell";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { WorkflowsPage } from "@/pages/WorkflowsPage";
@@ -9,6 +11,8 @@ import { EditorPage } from "@/features/workflows/EditorPage";
 import { CommandPalette } from "@/components/CommandPalette";
 import { useHotkeys } from "@/hooks/useHotkeys";
 import { useCommandPaletteStore } from "@/stores/commandPaletteStore";
+import { seedDemoWorkflowsIfEmpty } from "@/lib/demoData";
+import { WORKFLOWS_QUERY_KEY } from "@/features/workflows/api/workflowDrafts";
 
 function GlobalShortcuts() {
   const toggle = useCommandPaletteStore((s) => s.toggle);
@@ -16,7 +20,18 @@ function GlobalShortcuts() {
   return null;
 }
 
+function useSeedDemoData() {
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    seedDemoWorkflowsIfEmpty().then((seeded) => {
+      if (seeded) queryClient.invalidateQueries({ queryKey: WORKFLOWS_QUERY_KEY });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+}
+
 export default function App() {
+  useSeedDemoData();
   return (
     <>
       <Routes>

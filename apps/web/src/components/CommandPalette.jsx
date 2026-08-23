@@ -24,8 +24,7 @@ export function CommandPalette() {
   const location = useLocation();
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
   const addNode = useEditorStore((s) => s.addNode);
-  const beginSaving = useEditorStore((s) => s.beginSaving);
-  const markSaved = useEditorStore((s) => s.markSaved);
+  const requestImmediateSave = useEditorStore((s) => s.requestImmediateSave);
 
   const inEditor = location.pathname.startsWith("/workflows/");
 
@@ -91,10 +90,7 @@ export function CommandPalette() {
           {inEditor && (
             <Command.Group heading="Editor" className="px-2 py-1 text-[11px] uppercase tracking-wide text-foreground-muted [&_[cmdk-group-heading]]:px-1 [&_[cmdk-group-heading]]:pb-1">
               <Command.Item
-                onSelect={run(() => {
-                  beginSaving();
-                  setTimeout(markSaved, 250);
-                })}
+                onSelect={run(requestImmediateSave)}
                 className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm aria-selected:bg-surface-muted"
               >
                 <Save className="h-4 w-4" aria-hidden="true" /> Save workflow

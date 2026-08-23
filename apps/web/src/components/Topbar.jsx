@@ -1,6 +1,7 @@
 import { Sun, Moon, Search } from "lucide-react";
 import { useThemeStore } from "@/stores/themeStore";
 import { useCommandPaletteStore } from "@/stores/commandPaletteStore";
+import { OfflineIndicator } from "./OfflineIndicator";
 
 export function Topbar() {
   const theme = useThemeStore((s) => s.theme);
@@ -22,18 +23,21 @@ export function Topbar() {
         </kbd>
       </button>
 
-      <button
-        type="button"
-        onClick={toggleTheme}
-        className="ml-4 flex h-9 w-9 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-muted hover:text-foreground"
-        aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-      >
-        {theme === "dark" ? (
-          <Sun className="h-4 w-4" aria-hidden="true" />
-        ) : (
-          <Moon className="h-4 w-4" aria-hidden="true" />
-        )}
-      </button>
+      <div className="ml-4 flex items-center gap-3">
+        <OfflineIndicator />
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="flex h-9 w-9 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-muted hover:text-foreground"
+          aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+        >
+          {theme === "dark" ? (
+            <Sun className="h-4 w-4" aria-hidden="true" />
+          ) : (
+            <Moon className="h-4 w-4" aria-hidden="true" />
+          )}
+        </button>
+      </div>
     </header>
   );
 }

@@ -1,0 +1,33 @@
+# app name is a placeholder — Fly app names are global, so "flowpilot-api"
+# may already be taken. `flyctl launch` will prompt to pick one; update this
+# line (or pass --name) to whatever it settles on.
+app = "flowpilot-api"
+primary_region = "iad"
+
+[build]
+  # Dockerfile lives in apps/api, but the build context is this file's
+  # directory (repo root) — required so its COPY paths can reach
+  # packages/shared and the root package-lock.json for the npm workspace.
+  dockerfile = "apps/api/Dockerfile"
+
+[env]
+  PORT = "4000"
+  NODE_ENV = "production"
+
+[http_service]
+  internal_port = 4000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    timeout = "5s"
+    path = "/api/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

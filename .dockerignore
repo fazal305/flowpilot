@@ -1,0 +1,14 @@
+node_modules
+**/node_modules
+apps/web/dist
+apps/web/src
+.git
+.env
+.env.*
+!.env.example
+!apps/api/.env.example
+*.log
+coverage
+.netlify
+.vercel
+.fly

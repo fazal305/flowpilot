@@ -146,7 +146,16 @@ netlify deploy --prod --no-build --dir apps/web/dist
 ```
 (run from `apps/web/`, after `npm run build --workspace=apps/web`, to route around a monorepo-detection crash in the current Netlify CLI version when other commands are run from the repo root).
 
-**Backend (Fly.io) + Database (Supabase):** neither has been created — no accounts exist yet for either. Nothing backend-dependent (workflow persistence, execution, real AI calls) can go live until both exist — the live Vercel frontend above works for everything local-first (drafts, autosave, offline, the editor, search) and fails with a clear inline error, not a hang, for anything that needs the API. See the repeated callouts throughout this README and the git history for exactly what has and hasn't been verified as a result.
+**Backend (Fly.io) + Database (Supabase):** neither account exists yet, so nothing has actually deployed — but the deploy config is written and committed (`fly.toml` at the repo root, `apps/api/Dockerfile`, `.dockerignore`), ready to run the moment `flyctl` is installed and logged in. It has **not** been build-tested locally (no Docker available in the environment that wrote it), so treat it as carefully-written-but-unverified until a real `fly deploy` proves it. Once you've run `flyctl auth login` yourself:
+```bash
+flyctl launch --no-deploy   # picks up fly.toml; confirm/adjust the app name if "flowpilot-api" is taken
+flyctl secrets set DATABASE_URL="<your Postgres connection string>"
+flyctl secrets set JWT_SECRET="<a random 32+ char string>"
+flyctl secrets set WEB_ORIGIN="https://flowpilot-omega-seven.vercel.app"
+flyctl secrets set OPENROUTER_API_KEY="<your key, or omit to keep AI mocked>"
+flyctl deploy
+```
+Nothing backend-dependent (workflow persistence, execution, real AI calls) can go live until this runs successfully. The live Vercel frontend above works for everything local-first (drafts, autosave, offline, the editor, search) and fails with a clear inline error, not a hang, for anything that needs the API. See the repeated callouts throughout this README and the git history for exactly what has and hasn't been verified as a result.
 
 ## Security notes
 

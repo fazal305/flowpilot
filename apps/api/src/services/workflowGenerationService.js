@@ -93,7 +93,7 @@ function mockGeneratedWorkflow(prompt) {
 
   return {
     name: `Generated: ${prompt.slice(0, 60)}`,
-    description: "Mocked draft — OPENROUTER_API_KEY isn't configured, so this is a fixed example shape rather than a real generation.",
+    description: "Mocked draft — this is an educational/portfolio project, so bring your own OpenRouter API key (OPENROUTER_API_KEY in apps/api/.env) for a real generation. This is a fixed example shape instead.",
     graph: { nodes: layoutGraph(nodes, edges), edges },
     meta: { mocked: true, model: null, promptTokens: 0, completionTokens: 0, latencyMs: 0 },
   };

@@ -13,7 +13,7 @@ export async function executeAi(config, input) {
   if (!env.openRouterApiKey) {
     return {
       mocked: true,
-      note: "OPENROUTER_API_KEY is not configured — this is a placeholder response.",
+      note: "This is an educational/portfolio project — bring your own OpenRouter API key (set OPENROUTER_API_KEY in apps/api/.env) to enable real AI calls. This is a placeholder response.",
       model: config.model,
       prompt,
       summary: `[mock] Would summarize: ${prompt.slice(0, 200)}`,

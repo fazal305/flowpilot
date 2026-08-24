@@ -77,7 +77,9 @@ export function GenerateWorkflowDialog() {
           <div className="flex flex-col gap-3">
             {generate.data.meta.mocked && (
               <p className="rounded-md border border-node-logic/30 bg-node-logic/10 p-2.5 text-xs text-node-logic">
-                OpenRouter isn't configured yet, so this is a fixed example draft rather than a real generation from your prompt.
+                This is an educational/portfolio project — bring your own OpenRouter API key (set{" "}
+                <code className="font-mono-token">OPENROUTER_API_KEY</code> in the backend's <code className="font-mono-token">.env</code>)
+                for a real generation from your prompt. This is a fixed example draft instead.
               </p>
             )}
 

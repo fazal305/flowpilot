@@ -6,6 +6,7 @@ import { DashboardPage } from "@/pages/DashboardPage";
 import { WorkflowsPage } from "@/pages/WorkflowsPage";
 import { ExecutionsPage } from "@/pages/ExecutionsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
+import { NotFoundPage } from "@/pages/NotFoundPage";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { CommandPalette } from "@/components/CommandPalette";
 import { GenerateWorkflowDialog } from "@/features/ai/GenerateWorkflowDialog";
@@ -59,6 +60,7 @@ export default function App() {
             <Route path="/executions/:executionId" element={<ExecutionDetailPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
       <GlobalShortcuts />

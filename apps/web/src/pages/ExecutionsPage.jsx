@@ -3,9 +3,11 @@ import { PlayCircle, AlertTriangle } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { useRecentExecutions } from "@/features/executions/api/executions";
 import { EXECUTION_STATUS_STYLES, formatDuration, shortId } from "@/features/executions/statusStyles";
+import { useSlowRequestFlag } from "@/hooks/useDelayedFlag";
 
 export function ExecutionsPage() {
   const { data: executions = [], isLoading, isError, error } = useRecentExecutions();
+  const showSlowNotice = useSlowRequestFlag(isLoading);
 
   return (
     <div className="flex h-full flex-col">
@@ -17,7 +19,10 @@ export function ExecutionsPage() {
       </div>
 
       {isLoading ? (
-        <div className="px-6 py-6 text-sm text-foreground-muted">Loading executions…</div>
+        <div className="px-6 py-6 text-sm text-foreground-muted">
+          <p>Loading executions…</p>
+          {showSlowNotice && <p className="mt-1">This is taking longer than usual…</p>}
+        </div>
       ) : isError ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
           <AlertTriangle className="h-6 w-6 text-destructive" aria-hidden="true" />

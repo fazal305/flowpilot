@@ -20,3 +20,14 @@ export function useDelayedFlag(active, delayMs = 200) {
 
   return shown;
 }
+
+/**
+ * Flips true only once `active` has stayed true past `delayMs` (default
+ * ~5.5s). Meant to pair with `useDelayedFlag`'s spinner: once a request
+ * has clearly outrun a normal round trip, this lets a page swap "Loading…"
+ * for a "this is taking longer than usual" message instead of leaving the
+ * user staring at a bare spinner with no sense of whether it's stuck.
+ */
+export function useSlowRequestFlag(active, delayMs = 5500) {
+  return useDelayedFlag(active, delayMs);
+}

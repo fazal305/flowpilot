@@ -3,7 +3,7 @@ import { Workflow, Plus, ArrowRight } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { useWorkflowsList } from "@/features/workflows/api/workflowDrafts";
 import { useLastOpenedWorkflowId } from "@/features/workflows/api/preferences";
-import { useDelayedFlag } from "@/hooks/useDelayedFlag";
+import { useDelayedFlag, useSlowRequestFlag } from "@/hooks/useDelayedFlag";
 
 const STATUS_STYLES = {
   draft: "bg-surface-muted text-foreground-muted",
@@ -17,6 +17,7 @@ export function DashboardPage() {
   const recent = workflows.slice(0, 5);
   const lastOpened = workflows.find((w) => w.id === lastOpenedId);
   const showLoading = useDelayedFlag(isLoading);
+  const showSlowNotice = useSlowRequestFlag(isLoading);
 
   return (
     <div className="flex h-full flex-col">
@@ -28,7 +29,12 @@ export function DashboardPage() {
       </div>
 
       {isLoading ? (
-        showLoading && <div className="px-6 py-6 text-sm text-foreground-muted">Loading…</div>
+        showLoading && (
+          <div className="px-6 py-6 text-sm text-foreground-muted">
+            <p>Loading…</p>
+            {showSlowNotice && <p className="mt-1">This is taking longer than usual…</p>}
+          </div>
+        )
       ) : workflows.length === 0 ? (
         <EmptyState
           icon={Workflow}

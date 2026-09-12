@@ -188,7 +188,7 @@ export function Inspector() {
                 type="text"
                 value={config.model}
                 onChange={(e) => patch({ model: e.target.value })}
-                placeholder="anthropic/claude-3.5-haiku"
+                placeholder="meta-llama/llama-3.3-70b-instruct:free"
                 className={[FIELD_CLASS, "font-mono-token"].join(" ")}
               />
             </label>

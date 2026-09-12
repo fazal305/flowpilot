@@ -87,7 +87,7 @@ function buildDemoWorkflows() {
           value: 100000,
         }),
         node("summarize", "ai", "AI Summarizer", { x: 700, y: 60 }, {
-          model: "anthropic/claude-3.5-haiku",
+          model: "meta-llama/llama-3.3-70b-instruct:free",
           systemPrompt: "You summarize inbound sales leads in two sentences, noting urgency and fit.",
           userPromptTemplate: "Summarize this lead's requirements: {{lead.requirements}}",
           maxTokens: 300,

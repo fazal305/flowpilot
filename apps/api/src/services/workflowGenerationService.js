@@ -21,7 +21,7 @@ Rules:
   schedule: { "cron": string, "timezone": string }
   httpRequest: { "url": string, "method": string, "headers": object, "body": string, "auth": {"type":"none"}, "timeoutMs": number }
   condition: { "field": "dot.path.into.upstream.output", "operator": "equals"|"notEquals"|"greaterThan"|"lessThan"|"contains"|"isEmpty"|"isNotEmpty", "value": string|number }
-  ai: { "model": "anthropic/claude-3.5-haiku", "systemPrompt": string, "userPromptTemplate": string, "maxTokens": number, "temperature": number }
+  ai: { "model": "meta-llama/llama-3.3-70b-instruct:free", "systemPrompt": string, "userPromptTemplate": string, "maxTokens": number, "temperature": number }
   notification: { "channel": "email"|"webhookOut"|"inApp", "target": string, "messageTemplate": string }
 - Keep it focused: 3 to 7 nodes total.
 - Output ONLY the JSON object.`;
@@ -104,7 +104,7 @@ export async function generateWorkflow(prompt) {
     return mockGeneratedWorkflow(prompt);
   }
 
-  const model = "anthropic/claude-3.5-haiku";
+  const model = "meta-llama/llama-3.3-70b-instruct:free";
   const result = await callOpenRouter({
     model,
     systemPrompt: SYSTEM_PROMPT,

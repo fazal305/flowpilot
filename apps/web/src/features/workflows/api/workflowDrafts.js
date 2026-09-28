@@ -25,7 +25,8 @@ export function useDeleteWorkflow() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: deleteWorkflow,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: WORKFLOWS_QUERY_KEY }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: WORKFLOWS_QUERY_KEY }),
   });
 }
 
@@ -37,12 +38,14 @@ export function useDeleteWorkflow() {
 export function usePublishWorkflow() {
   return useMutation({
     mutationFn: async (workflow) =>
-      (await api.put(`/api/workflows/${workflow.id}`, {
-        name: workflow.name,
-        description: workflow.description,
-        status: workflow.status,
-        graph: workflow.graph,
-      })).workflow,
+      (
+        await api.put(`/api/workflows/${workflow.id}`, {
+          name: workflow.name,
+          description: workflow.description,
+          status: workflow.status,
+          graph: workflow.graph,
+        })
+      ).workflow,
   });
 }
 
@@ -62,6 +65,7 @@ export function useDuplicateWorkflow() {
       await putWorkflow(copy);
       return copy;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: WORKFLOWS_QUERY_KEY }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: WORKFLOWS_QUERY_KEY }),
   });
 }

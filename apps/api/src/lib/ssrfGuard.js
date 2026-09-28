@@ -3,7 +3,9 @@ import net from "node:net";
 
 export class SsrfBlockedError extends Error {
   constructor(host) {
-    super(`Request to "${host}" is blocked: it resolves to a private/internal network address.`);
+    super(
+      `Request to "${host}" is blocked: it resolves to a private/internal network address.`,
+    );
     this.name = "SsrfBlockedError";
   }
 }

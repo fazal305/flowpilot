@@ -1,5 +1,11 @@
 import { useCallback } from "react";
-import { ReactFlow, Background, Controls, MiniMap, useReactFlow } from "@xyflow/react";
+import {
+  ReactFlow,
+  Background,
+  Controls,
+  MiniMap,
+  useReactFlow,
+} from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useEditorStore } from "./store/editorStore";
 import { WorkflowNode } from "./nodes/WorkflowNode";
@@ -23,10 +29,13 @@ export function EditorCanvas() {
       event.preventDefault();
       const type = event.dataTransfer.getData(DRAG_DATA_KEY);
       if (!type) return;
-      const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+      const position = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
       addNode(type, position);
     },
-    [addNode, screenToFlowPosition]
+    [addNode, screenToFlowPosition],
   );
 
   return (
@@ -53,8 +62,16 @@ export function EditorCanvas() {
         deleteKeyCode={["Backspace", "Delete"]}
         proOptions={{ hideAttribution: true }}
       >
-        <Background gap={18} size={1} className="!bg-background" color="var(--color-border)" />
-        <Controls showInteractive={false} className="!border !border-border !bg-surface !shadow-md [&_button]:!border-border [&_button]:!bg-surface [&_button]:!text-foreground [&_button:hover]:!bg-surface-muted" />
+        <Background
+          gap={18}
+          size={1}
+          className="!bg-background"
+          color="var(--color-border)"
+        />
+        <Controls
+          showInteractive={false}
+          className="!border !border-border !bg-surface !shadow-md [&_button]:!border-border [&_button]:!bg-surface [&_button]:!text-foreground [&_button:hover]:!bg-surface-muted"
+        />
         <MiniMap
           pannable
           zoomable

@@ -17,7 +17,10 @@ export function ShortcutsDialog({ open, onClose }) {
       </div>
       <ul className="divide-y divide-border">
         {SHORTCUTS.map((s) => (
-          <li key={s.description} className="flex items-center justify-between px-4 py-2.5 text-sm">
+          <li
+            key={s.description}
+            className="flex items-center justify-between px-4 py-2.5 text-sm"
+          >
             <span className="text-foreground-muted">{s.description}</span>
             <span className="flex gap-1">
               {s.keys.map((k) => (

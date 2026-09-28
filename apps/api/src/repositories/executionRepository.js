@@ -2,7 +2,11 @@ import { prisma } from "../db/prisma.js";
 
 export function createPendingExecution(workflowId, triggeredBy) {
   return prisma.workflowExecution.create({
-    data: { workflowId, status: "PENDING", triggeredBy: triggeredBy.toUpperCase() },
+    data: {
+      workflowId,
+      status: "PENDING",
+      triggeredBy: triggeredBy.toUpperCase(),
+    },
   });
 }
 

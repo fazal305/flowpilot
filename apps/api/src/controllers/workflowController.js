@@ -12,7 +12,10 @@ export async function upsert(request, reply) {
   if (!parsed.success) {
     return reply.code(400).send({ error: parsed.error.flatten() });
   }
-  const workflow = await saveWorkflow({ ...parsed.data, id: request.params.id });
+  const workflow = await saveWorkflow({
+    ...parsed.data,
+    id: request.params.id,
+  });
   return reply.send({ workflow });
 }
 

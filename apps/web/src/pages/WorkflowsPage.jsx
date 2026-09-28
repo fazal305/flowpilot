@@ -49,7 +49,8 @@ export function WorkflowsPage() {
         <div>
           <h1 className="text-lg font-semibold">Workflows</h1>
           <p className="text-sm text-foreground-muted">
-            Trigger → condition → action graphs you've built. Saved to this browser.
+            Trigger → condition → action graphs you've built. Saved to this
+            browser.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -91,7 +92,9 @@ export function WorkflowsPage() {
         showLoading && (
           <div className="px-6 py-6 text-sm text-foreground-muted">
             <p>Loading workflows…</p>
-            {showSlowNotice && <p className="mt-1">This is taking longer than usual…</p>}
+            {showSlowNotice && (
+              <p className="mt-1">This is taking longer than usual…</p>
+            )}
           </div>
         )
       ) : workflows.length === 0 ? (
@@ -126,10 +129,17 @@ export function WorkflowsPage() {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{workflow.name}</p>
                 <p className="truncate text-xs text-foreground-muted">
-                  {workflow.graph.nodes.length} node{workflow.graph.nodes.length === 1 ? "" : "s"} · updated {formatRelativeTime(workflow.updatedAt)}
+                  {workflow.graph.nodes.length} node
+                  {workflow.graph.nodes.length === 1 ? "" : "s"} · updated{" "}
+                  {formatRelativeTime(workflow.updatedAt)}
                 </p>
               </div>
-              <span className={["rounded-full px-2 py-0.5 text-[11px] font-medium capitalize", STATUS_STYLES[workflow.status]].join(" ")}>
+              <span
+                className={[
+                  "rounded-full px-2 py-0.5 text-[11px] font-medium capitalize",
+                  STATUS_STYLES[workflow.status],
+                ].join(" ")}
+              >
                 {workflow.status}
               </span>
               <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
@@ -149,7 +159,11 @@ export function WorkflowsPage() {
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (window.confirm(`Delete "${workflow.name}"? This can't be undone.`)) {
+                    if (
+                      window.confirm(
+                        `Delete "${workflow.name}"? This can't be undone.`,
+                      )
+                    ) {
                       deleteWorkflow.mutate(workflow.id);
                     }
                   }}

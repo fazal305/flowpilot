@@ -62,7 +62,10 @@ export function Toolbar() {
         status: workflowStatus,
         graph,
       });
-      const executionId = await triggerExecution.mutateAsync({ workflowId, triggeredBy: "manual" });
+      const executionId = await triggerExecution.mutateAsync({
+        workflowId,
+        triggeredBy: "manual",
+      });
       navigate(`/executions/${executionId}`);
     } catch (error) {
       setRunError(error.message ?? "Couldn't start this run.");
@@ -96,7 +99,9 @@ export function Toolbar() {
         className="rounded-md border border-border bg-surface-muted px-2 py-1 text-xs capitalize text-foreground-muted outline-none focus-visible:border-accent"
       >
         {WORKFLOW_STATUSES.map((status) => (
-          <option key={status} value={status}>{status}</option>
+          <option key={status} value={status}>
+            {status}
+          </option>
         ))}
       </select>
 
@@ -125,7 +130,11 @@ export function Toolbar() {
 
       <div className="ml-auto flex items-center gap-3">
         {runError && (
-          <span className="max-w-xs truncate text-xs text-destructive" title={runError} role="alert">
+          <span
+            className="max-w-xs truncate text-xs text-destructive"
+            title={runError}
+            role="alert"
+          >
             {runError}
           </span>
         )}
@@ -140,7 +149,10 @@ export function Toolbar() {
           {syncStatus === "local-only" ? "Local only" : syncStatus}
         </span>
 
-        <div className="flex items-center gap-1.5 text-xs text-foreground-muted" role="status">
+        <div
+          className="flex items-center gap-1.5 text-xs text-foreground-muted"
+          role="status"
+        >
           {saveState === "saving" ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
           ) : (
@@ -163,7 +175,9 @@ export function Toolbar() {
           aria-expanded={showIssues}
         >
           <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
-          {issues.length === 0 ? "Valid" : `${issues.length} issue${issues.length > 1 ? "s" : ""}`}
+          {issues.length === 0
+            ? "Valid"
+            : `${issues.length} issue${issues.length > 1 ? "s" : ""}`}
         </button>
 
         <button

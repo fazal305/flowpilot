@@ -16,7 +16,10 @@ function generateId(prefix) {
 }
 
 function cloneGraph(nodes, edges) {
-  return { nodes: JSON.parse(JSON.stringify(nodes)), edges: JSON.parse(JSON.stringify(edges)) };
+  return {
+    nodes: JSON.parse(JSON.stringify(nodes)),
+    edges: JSON.parse(JSON.stringify(edges)),
+  };
 }
 
 export const useEditorStore = create((set, get) => ({
@@ -37,7 +40,17 @@ export const useEditorStore = create((set, get) => ({
   saveRequestId: 0,
   generatedByAi: false,
 
-  loadGraph: ({ id = null, name, description = "", status = "draft", syncStatus = "local-only", createdAt = null, generatedByAi = false, nodes, edges }) =>
+  loadGraph: ({
+    id = null,
+    name,
+    description = "",
+    status = "draft",
+    syncStatus = "local-only",
+    createdAt = null,
+    generatedByAi = false,
+    nodes,
+    edges,
+  }) =>
     set({
       workflowId: id,
       workflowName: name ?? "Untitled workflow",
@@ -55,11 +68,14 @@ export const useEditorStore = create((set, get) => ({
       saveState: "saved",
     }),
 
-  dismissAiBanner: () => set({ generatedByAi: false, dirty: true, saveState: "unsaved" }),
+  dismissAiBanner: () =>
+    set({ generatedByAi: false, dirty: true, saveState: "unsaved" }),
 
   setWorkflowId: (id) => set({ workflowId: id }),
-  setWorkflowName: (name) => set({ workflowName: name, dirty: true, saveState: "unsaved" }),
-  setWorkflowStatus: (status) => set({ workflowStatus: status, dirty: true, saveState: "unsaved" }),
+  setWorkflowName: (name) =>
+    set({ workflowName: name, dirty: true, saveState: "unsaved" }),
+  setWorkflowStatus: (status) =>
+    set({ workflowStatus: status, dirty: true, saveState: "unsaved" }),
 
   commitHistory: () => {
     const { nodes, edges, past } = get();
@@ -76,7 +92,11 @@ export const useEditorStore = create((set, get) => ({
     // changes — neither represents an actual edit, so they shouldn't dirty
     // the workflow or wake up autosave.
     const isMeaningful = changes.some(
-      (c) => c.type === "remove" || c.type === "position" || c.type === "add" || c.type === "replace"
+      (c) =>
+        c.type === "remove" ||
+        c.type === "position" ||
+        c.type === "add" ||
+        c.type === "replace",
     );
     set((s) => {
       const removedIds = changes
@@ -178,8 +198,11 @@ export const useEditorStore = create((set, get) => ({
     set((s) => ({
       nodes: s.nodes.map((n) =>
         n.id === id
-          ? { ...n, data: { ...n.data, config: { ...n.data.config, ...patch } } }
-          : n
+          ? {
+              ...n,
+              data: { ...n.data, config: { ...n.data.config, ...patch } },
+            }
+          : n,
       ),
       dirty: true,
       saveState: "unsaved",
@@ -190,7 +213,7 @@ export const useEditorStore = create((set, get) => ({
     get().commitHistory();
     set((s) => ({
       nodes: s.nodes.map((n) =>
-        n.id === id ? { ...n, data: { ...n.data, label } } : n
+        n.id === id ? { ...n, data: { ...n.data, label } } : n,
       ),
       dirty: true,
       saveState: "unsaved",
@@ -230,9 +253,14 @@ export const useEditorStore = create((set, get) => ({
     });
   },
 
-  requestImmediateSave: () => set((s) => ({ saveRequestId: s.saveRequestId + 1 })),
+  requestImmediateSave: () =>
+    set((s) => ({ saveRequestId: s.saveRequestId + 1 })),
 
   beginSaving: () => set({ saveState: "saving" }),
   markSaved: () =>
-    set({ dirty: false, saveState: "saved", lastSavedAt: new Date().toISOString() }),
+    set({
+      dirty: false,
+      saveState: "saved",
+      lastSavedAt: new Date().toISOString(),
+    }),
 }));

@@ -1,8 +1,16 @@
-import { EXECUTORS, NODE_TIMEOUT_MS, RETRYABLE_TYPES, MAX_RETRIES } from "../executors/index.js";
+import {
+  EXECUTORS,
+  NODE_TIMEOUT_MS,
+  RETRYABLE_TYPES,
+  MAX_RETRIES,
+} from "../executors/index.js";
 
 function withTimeout(promise, ms) {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error(`Node timed out after ${ms}ms.`)), ms);
+    const timer = setTimeout(
+      () => reject(new Error(`Node timed out after ${ms}ms.`)),
+      ms,
+    );
     promise.then(
       (value) => {
         clearTimeout(timer);
@@ -11,7 +19,7 @@ function withTimeout(promise, ms) {
       (error) => {
         clearTimeout(timer);
         reject(error);
-      }
+      },
     );
   });
 }
@@ -26,7 +34,8 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  */
 export async function runNode(node, input, context) {
   const executor = EXECUTORS[node.type];
-  if (!executor) throw new Error(`No executor registered for node type "${node.type}".`);
+  if (!executor)
+    throw new Error(`No executor registered for node type "${node.type}".`);
 
   const timeoutMs = NODE_TIMEOUT_MS[node.type] ?? 10_000;
   const maxAttempts = RETRYABLE_TYPES.has(node.type) ? MAX_RETRIES + 1 : 1;
@@ -36,7 +45,7 @@ export async function runNode(node, input, context) {
     try {
       const output = await withTimeout(
         Promise.resolve(executor(node.config, input, context)),
-        timeoutMs
+        timeoutMs,
       );
       return { output, retryCount: attempt };
     } catch (error) {

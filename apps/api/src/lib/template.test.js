@@ -7,7 +7,12 @@ test("substitutes a simple dot-path", () => {
 });
 
 test("substitutes a nested dot-path", () => {
-  assert.equal(renderTemplate("{{lead.name}} — {{lead.budget}}", { lead: { name: "Ada", budget: 500 } }), "Ada — 500");
+  assert.equal(
+    renderTemplate("{{lead.name}} — {{lead.budget}}", {
+      lead: { name: "Ada", budget: 500 },
+    }),
+    "Ada — 500",
+  );
 });
 
 test("a missing path renders as an empty string, not 'undefined'", () => {
@@ -30,5 +35,8 @@ test("non-string templates pass through unchanged", () => {
 });
 
 test("multiple placeholders in one string all resolve", () => {
-  assert.equal(renderTemplate("{{a}}-{{b}}-{{a}}", { a: "x", b: "y" }), "x-y-x");
+  assert.equal(
+    renderTemplate("{{a}}-{{b}}-{{a}}", { a: "x", b: "y" }),
+    "x-y-x",
+  );
 });

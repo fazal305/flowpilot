@@ -1,5 +1,7 @@
 function getByPath(obj, path) {
-  return path.split(".").reduce((acc, key) => (acc == null ? undefined : acc[key]), obj);
+  return path
+    .split(".")
+    .reduce((acc, key) => (acc == null ? undefined : acc[key]), obj);
 }
 
 const OPERATORS = {
@@ -20,7 +22,13 @@ const OPERATORS = {
 export async function executeCondition(config, input) {
   const actual = getByPath(input, config.field);
   const compare = OPERATORS[config.operator];
-  if (!compare) throw new Error(`Unknown condition operator: ${config.operator}`);
+  if (!compare)
+    throw new Error(`Unknown condition operator: ${config.operator}`);
   const result = compare(actual, config.value);
-  return { result, field: config.field, actualValue: actual, expected: config.value };
+  return {
+    result,
+    field: config.field,
+    actualValue: actual,
+    expected: config.value,
+  };
 }

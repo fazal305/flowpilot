@@ -13,7 +13,10 @@ export async function generate(request, reply) {
     const result = await generateWorkflow(parsed.data.prompt);
     return reply.send(result);
   } catch (error) {
-    if (error instanceof OpenRouterError || error instanceof GeneratedGraphError) {
+    if (
+      error instanceof OpenRouterError ||
+      error instanceof GeneratedGraphError
+    ) {
       return reply.code(422).send({ error: error.message });
     }
     throw error;

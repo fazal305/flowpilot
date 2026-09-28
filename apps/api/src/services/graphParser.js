@@ -22,7 +22,9 @@ export function nextNodeIds(node, output, adjacency) {
   const outgoing = adjacency.get(node.id) ?? [];
   if (node.type === "condition") {
     const branch = output?.result ? "true" : "false";
-    return outgoing.filter((e) => e.sourceHandle === branch).map((e) => e.target);
+    return outgoing
+      .filter((e) => e.sourceHandle === branch)
+      .map((e) => e.target);
   }
   return outgoing.map((e) => e.target);
 }

@@ -7,7 +7,12 @@ const rfNodes = [
     id: "n1",
     type: "workflowNode",
     position: { x: 10, y: 20 },
-    data: { nodeType: "webhook", label: "Trigger", config: { path: "x", method: "POST" }, status: "idle" },
+    data: {
+      nodeType: "webhook",
+      label: "Trigger",
+      config: { path: "x", method: "POST" },
+      status: "idle",
+    },
   },
 ];
 const rfEdges = [{ id: "e1", source: "n1", target: "n1", sourceHandle: null }];
@@ -21,7 +26,12 @@ test("toSharedGraph flattens React Flow's data wrapper into the plain shape", ()
     config: { path: "x", method: "POST" },
     position: { x: 10, y: 20 },
   });
-  assert.deepEqual(shared.edges[0], { id: "e1", source: "n1", target: "n1", sourceHandle: null });
+  assert.deepEqual(shared.edges[0], {
+    id: "e1",
+    source: "n1",
+    target: "n1",
+    sourceHandle: null,
+  });
 });
 
 test("toReactFlowGraph re-wraps a plain graph into React Flow's node shape", () => {

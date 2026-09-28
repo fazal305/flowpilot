@@ -41,7 +41,10 @@ test("an invalid node type is rejected", () => {
 });
 
 test("an invalid workflow status is rejected", () => {
-  const result = upsertWorkflowSchema.safeParse({ ...validPayload, status: "archived" });
+  const result = upsertWorkflowSchema.safeParse({
+    ...validPayload,
+    status: "archived",
+  });
   assert.equal(result.success, false);
 });
 

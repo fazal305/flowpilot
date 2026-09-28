@@ -18,8 +18,13 @@ if (env.databaseUrl) {
   try {
     await startExecutionWorker(app.log);
   } catch (error) {
-    app.log.error({ err: error }, "Could not start execution worker — workflow runs will stay pending.");
+    app.log.error(
+      { err: error },
+      "Could not start execution worker — workflow runs will stay pending.",
+    );
   }
 } else {
-  app.log.warn("DATABASE_URL not set — execution worker not started, workflow persistence disabled.");
+  app.log.warn(
+    "DATABASE_URL not set — execution worker not started, workflow persistence disabled.",
+  );
 }

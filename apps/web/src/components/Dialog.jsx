@@ -21,7 +21,10 @@ export function Dialog({ open, onClose, title, children, className = "" }) {
         aria-label={title}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className={["w-full max-w-lg rounded-lg border border-border bg-surface shadow-lg outline-none", className].join(" ")}
+        className={[
+          "w-full max-w-lg rounded-lg border border-border bg-surface shadow-lg outline-none",
+          className,
+        ].join(" ")}
       >
         {children}
       </div>

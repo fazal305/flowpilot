@@ -17,12 +17,13 @@ export function validateGraph({ nodes, edges }) {
   }
 
   const hasTrigger = nodes.some(
-    (n) => NODE_CATEGORY_BY_TYPE[n.type] === "trigger"
+    (n) => NODE_CATEGORY_BY_TYPE[n.type] === "trigger",
   );
   if (!hasTrigger) {
     issues.push({
       level: "error",
-      message: "Add at least one trigger (Webhook or Schedule) to start this workflow.",
+      message:
+        "Add at least one trigger (Webhook or Schedule) to start this workflow.",
     });
   }
 
@@ -76,7 +77,8 @@ export function validateGraph({ nodes, edges }) {
   if (hasCycle(nodes, edges)) {
     issues.push({
       level: "error",
-      message: "This workflow contains a cycle, which the execution engine cannot run.",
+      message:
+        "This workflow contains a cycle, which the execution engine cannot run.",
     });
   }
 
@@ -86,7 +88,8 @@ export function validateGraph({ nodes, edges }) {
 function hasCycle(nodes, edges) {
   const adjacency = new Map(nodes.map((n) => [n.id, []]));
   for (const edge of edges) {
-    if (adjacency.has(edge.source)) adjacency.get(edge.source).push(edge.target);
+    if (adjacency.has(edge.source))
+      adjacency.get(edge.source).push(edge.target);
   }
 
   const visiting = new Set();

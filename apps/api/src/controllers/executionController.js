@@ -17,7 +17,10 @@ export async function trigger(request, reply) {
   if (!parsed.success) {
     return reply.code(400).send({ error: parsed.error.flatten() });
   }
-  const executionId = await triggerExecution(request.params.id, parsed.data.triggeredBy);
+  const executionId = await triggerExecution(
+    request.params.id,
+    parsed.data.triggeredBy,
+  );
   return reply.code(202).send({ executionId });
 }
 

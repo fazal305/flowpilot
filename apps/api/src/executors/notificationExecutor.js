@@ -13,7 +13,12 @@ export async function executeNotification(config, input, context) {
         body: message,
       },
     });
-    return { channel: "inApp", delivered: true, notificationId: notification.id, message };
+    return {
+      channel: "inApp",
+      delivered: true,
+      notificationId: notification.id,
+      message,
+    };
   }
 
   // Email/outbound-webhook providers aren't chosen yet (no external API was

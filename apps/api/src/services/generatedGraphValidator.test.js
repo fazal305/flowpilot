@@ -1,13 +1,26 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { validateGeneratedGraph, GeneratedGraphError } from "./generatedGraphValidator.js";
+import {
+  validateGeneratedGraph,
+  GeneratedGraphError,
+} from "./generatedGraphValidator.js";
 
 const validRaw = {
   name: "Lead router",
   description: "Routes leads by budget.",
   nodes: [
-    { id: "trigger", type: "webhook", label: "New Lead", config: { path: "leads", method: "POST" } },
-    { id: "cond", type: "condition", label: "High budget?", config: { field: "budget", operator: "greaterThan", value: 100000 } },
+    {
+      id: "trigger",
+      type: "webhook",
+      label: "New Lead",
+      config: { path: "leads", method: "POST" },
+    },
+    {
+      id: "cond",
+      type: "condition",
+      label: "High budget?",
+      config: { field: "budget", operator: "greaterThan", value: 100000 },
+    },
   ],
   edges: [{ id: "e1", source: "trigger", target: "cond" }],
 };
@@ -22,7 +35,10 @@ test("a well-formed AI response passes through with its fields intact", () => {
 test("an unknown node type is rejected, not silently accepted", () => {
   const raw = {
     ...validRaw,
-    nodes: [...validRaw.nodes, { id: "x", type: "sendCarrierPigeon", label: "Nope", config: {} }],
+    nodes: [
+      ...validRaw.nodes,
+      { id: "x", type: "sendCarrierPigeon", label: "Nope", config: {} },
+    ],
   };
   assert.throws(() => validateGeneratedGraph(raw), GeneratedGraphError);
 });
@@ -42,7 +58,14 @@ test("missing config fields are filled with the same defaults the editor uses", 
 test("model-provided config values win over defaults", () => {
   const raw = {
     ...validRaw,
-    nodes: [{ id: "trigger", type: "webhook", label: "New Lead", config: { method: "GET" } }],
+    nodes: [
+      {
+        id: "trigger",
+        type: "webhook",
+        label: "New Lead",
+        config: { method: "GET" },
+      },
+    ],
   };
   const result = validateGeneratedGraph(raw);
   assert.equal(result.nodes[0].config.method, "GET");
@@ -59,11 +82,17 @@ test("an edge pointing at a node id that doesn't exist is dropped, not left dang
 });
 
 test("zero nodes is rejected", () => {
-  assert.throws(() => validateGeneratedGraph({ ...validRaw, nodes: [] }), GeneratedGraphError);
+  assert.throws(
+    () => validateGeneratedGraph({ ...validRaw, nodes: [] }),
+    GeneratedGraphError,
+  );
 });
 
 test("a missing name/description falls back to sensible defaults instead of failing", () => {
-  const { name, description } = validateGeneratedGraph({ nodes: validRaw.nodes, edges: validRaw.edges });
+  const { name, description } = validateGeneratedGraph({
+    nodes: validRaw.nodes,
+    edges: validRaw.edges,
+  });
   assert.equal(name, "AI-generated workflow");
   assert.equal(description, "");
 });

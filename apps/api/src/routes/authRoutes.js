@@ -6,7 +6,10 @@ import { requireAuth } from "../middleware/requireAuth.js";
 const AUTH_RATE_LIMIT = { rateLimit: { max: 10, timeWindow: "1 minute" } };
 
 export async function authRoutes(app) {
-  app.post("/api/auth/register", { config: AUTH_RATE_LIMIT, handler: register });
+  app.post("/api/auth/register", {
+    config: AUTH_RATE_LIMIT,
+    handler: register,
+  });
   app.post("/api/auth/login", { config: AUTH_RATE_LIMIT, handler: login });
   app.post("/api/auth/logout", logout);
 

@@ -4,5 +4,9 @@
  * passes through the current time so downstream nodes have something real.
  */
 export async function executeSchedule(config) {
-  return { firedAt: new Date().toISOString(), cron: config.cron, timezone: config.timezone };
+  return {
+    firedAt: new Date().toISOString(),
+    cron: config.cron,
+    timezone: config.timezone,
+  };
 }

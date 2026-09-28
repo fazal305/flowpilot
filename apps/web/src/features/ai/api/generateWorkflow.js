@@ -9,6 +9,7 @@ import { api } from "@/services/apiClient";
  */
 export function useGenerateWorkflow() {
   return useMutation({
-    mutationFn: async (prompt) => api.post("/api/ai/generate-workflow", { prompt }),
+    mutationFn: async (prompt) =>
+      api.post("/api/ai/generate-workflow", { prompt }),
   });
 }

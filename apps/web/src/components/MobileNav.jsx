@@ -35,7 +35,9 @@ export function MobileNav() {
       >
         <div className="flex items-center gap-2 px-5 py-5">
           <Compass className="h-5 w-5 text-accent" aria-hidden="true" />
-          <span className="text-[15px] font-semibold tracking-tight">FlowPilot</span>
+          <span className="text-[15px] font-semibold tracking-tight">
+            FlowPilot
+          </span>
           <button
             type="button"
             onClick={() => setOpen(false)}

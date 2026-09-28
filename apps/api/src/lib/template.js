@@ -1,5 +1,7 @@
 function getByPath(obj, path) {
-  return path.split(".").reduce((acc, key) => (acc == null ? undefined : acc[key]), obj);
+  return path
+    .split(".")
+    .reduce((acc, key) => (acc == null ? undefined : acc[key]), obj);
 }
 
 /** Replaces {{dot.path}} placeholders against `data`. Missing paths render as empty string. */

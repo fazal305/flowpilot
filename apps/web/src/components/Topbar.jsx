@@ -39,7 +39,9 @@ export function Topbar() {
           type="button"
           onClick={toggleTheme}
           className="flex h-9 w-9 items-center justify-center rounded-md text-foreground-muted transition-colors hover:bg-surface-muted hover:text-foreground"
-          aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+          aria-label={
+            theme === "dark" ? "Switch to light theme" : "Switch to dark theme"
+          }
         >
           {theme === "dark" ? (
             <Sun className="h-4 w-4" aria-hidden="true" />

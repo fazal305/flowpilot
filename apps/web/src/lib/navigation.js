@@ -1,9 +1,4 @@
-import {
-  LayoutDashboard,
-  Workflow,
-  PlayCircle,
-  Settings,
-} from "lucide-react";
+import { LayoutDashboard, Workflow, PlayCircle, Settings } from "lucide-react";
 
 export const NAV_ITEMS = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },

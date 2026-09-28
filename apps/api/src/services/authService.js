@@ -1,10 +1,7 @@
 import jwt from "jsonwebtoken";
 import { env } from "../config/env.js";
 import { hashPassword, verifyPassword } from "./passwordService.js";
-import {
-  createUser,
-  findUserByEmail,
-} from "../repositories/userRepository.js";
+import { createUser, findUserByEmail } from "../repositories/userRepository.js";
 
 const SESSION_TTL = "7d";
 

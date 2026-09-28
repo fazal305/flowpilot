@@ -6,7 +6,10 @@ import { Sparkles, X, MonitorSmartphone } from "lucide-react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useEditorStore } from "./store/editorStore";
 import { useWorkflow, WORKFLOWS_QUERY_KEY } from "./api/workflowDrafts";
-import { LAST_OPENED_QUERY_KEY, LAST_OPENED_WORKFLOW_KEY } from "./api/preferences";
+import {
+  LAST_OPENED_QUERY_KEY,
+  LAST_OPENED_WORKFLOW_KEY,
+} from "./api/preferences";
 import { toReactFlowGraph } from "./graphAdapter";
 import { putWorkflow, setPreference } from "@/lib/db";
 import { useHotkeys } from "@/hooks/useHotkeys";
@@ -84,7 +87,10 @@ function useAutosave() {
   useEffect(() => {
     if (!dirty) return undefined;
     clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => performSaveRef.current(), AUTOSAVE_DELAY_MS);
+    timerRef.current = setTimeout(
+      () => performSaveRef.current(),
+      AUTOSAVE_DELAY_MS,
+    );
     return () => clearTimeout(timerRef.current);
   }, [dirty, nodes, edges, workflowName, workflowDescription, workflowStatus]);
 
@@ -176,7 +182,13 @@ function EditorPageInner({ routeId }) {
     if (!isNew) return;
     if (generated) {
       const { nodes, edges } = toReactFlowGraph(generated.graph);
-      loadGraph({ name: generated.name, description: generated.description, generatedByAi: true, nodes, edges });
+      loadGraph({
+        name: generated.name,
+        description: generated.description,
+        generatedByAi: true,
+        nodes,
+        edges,
+      });
       // Loaded content counts as an edit the user hasn't explicitly saved
       // yet, so autosave persists it locally like any other draft — but
       // nothing runs until Run is pressed, same as a hand-built workflow.
@@ -201,7 +213,7 @@ function EditorPageInner({ routeId }) {
         edges: existingWorkflow.graph.edges,
       });
       setPreference(LAST_OPENED_WORKFLOW_KEY, existingWorkflow.id).then(() =>
-        queryClient.invalidateQueries({ queryKey: LAST_OPENED_QUERY_KEY })
+        queryClient.invalidateQueries({ queryKey: LAST_OPENED_QUERY_KEY }),
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -240,11 +252,16 @@ function EditorPageInner({ routeId }) {
     // usable on a phone.
     return (
       <div className="flex h-screen w-screen flex-col items-center justify-center gap-3 bg-background px-6 text-center text-foreground">
-        <MonitorSmartphone className="h-6 w-6 text-foreground-muted" aria-hidden="true" />
-        <p className="text-sm font-medium">The workflow editor needs a larger screen.</p>
+        <MonitorSmartphone
+          className="h-6 w-6 text-foreground-muted"
+          aria-hidden="true"
+        />
+        <p className="text-sm font-medium">
+          The workflow editor needs a larger screen.
+        </p>
         <p className="max-w-xs text-xs text-foreground-muted">
-          Building and editing node graphs needs the space a phone screen can't give it.
-          Workflow and execution details are still fully viewable here.
+          Building and editing node graphs needs the space a phone screen can't
+          give it. Workflow and execution details are still fully viewable here.
         </p>
         <Link
           to="/workflows"

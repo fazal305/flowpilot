@@ -33,9 +33,15 @@ export function ValidationPanel({ issues, onClose }) {
                 className="flex w-full items-start gap-2 px-3 py-2 text-left text-sm hover:bg-surface-muted"
               >
                 {issue.level === "error" ? (
-                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />
+                  <AlertCircle
+                    className="mt-0.5 h-4 w-4 shrink-0 text-destructive"
+                    aria-hidden="true"
+                  />
                 ) : (
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-node-logic" aria-hidden="true" />
+                  <AlertTriangle
+                    className="mt-0.5 h-4 w-4 shrink-0 text-node-logic"
+                    aria-hidden="true"
+                  />
                 )}
                 <span>{issue.message}</span>
               </button>

@@ -32,7 +32,9 @@ export function DashboardPage() {
         showLoading && (
           <div className="px-6 py-6 text-sm text-foreground-muted">
             <p>Loading…</p>
-            {showSlowNotice && <p className="mt-1">This is taking longer than usual…</p>}
+            {showSlowNotice && (
+              <p className="mt-1">This is taking longer than usual…</p>
+            )}
           </div>
         )
       ) : workflows.length === 0 ? (
@@ -57,16 +59,26 @@ export function DashboardPage() {
               to={`/workflows/${lastOpened.id}`}
               className="flex items-center gap-3 rounded-lg border border-accent/30 bg-accent-soft px-4 py-3 hover:opacity-90"
             >
-              <Workflow className="h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
+              <Workflow
+                className="h-4 w-4 shrink-0 text-accent"
+                aria-hidden="true"
+              />
               <span className="text-sm">
-                Continue editing <span className="font-medium">{lastOpened.name}</span>
+                Continue editing{" "}
+                <span className="font-medium">{lastOpened.name}</span>
               </span>
-              <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
+              <ArrowRight
+                className="ml-auto h-4 w-4 shrink-0 text-accent"
+                aria-hidden="true"
+              />
             </Link>
           )}
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold">Recently edited</h2>
-            <Link to="/workflows" className="flex items-center gap-1 text-xs text-foreground-muted hover:text-foreground">
+            <Link
+              to="/workflows"
+              className="flex items-center gap-1 text-xs text-foreground-muted hover:text-foreground"
+            >
               View all <ArrowRight className="h-3 w-3" aria-hidden="true" />
             </Link>
           </div>
@@ -77,9 +89,19 @@ export function DashboardPage() {
                   to={`/workflows/${workflow.id}`}
                   className="flex items-center gap-3 px-4 py-3 hover:bg-surface-muted"
                 >
-                  <Workflow className="h-4 w-4 shrink-0 text-foreground-muted" aria-hidden="true" />
-                  <span className="min-w-0 flex-1 truncate text-sm">{workflow.name}</span>
-                  <span className={["rounded-full px-2 py-0.5 text-[11px] font-medium capitalize", STATUS_STYLES[workflow.status]].join(" ")}>
+                  <Workflow
+                    className="h-4 w-4 shrink-0 text-foreground-muted"
+                    aria-hidden="true"
+                  />
+                  <span className="min-w-0 flex-1 truncate text-sm">
+                    {workflow.name}
+                  </span>
+                  <span
+                    className={[
+                      "rounded-full px-2 py-0.5 text-[11px] font-medium capitalize",
+                      STATUS_STYLES[workflow.status],
+                    ].join(" ")}
+                  >
                     {workflow.status}
                   </span>
                 </Link>
@@ -87,7 +109,11 @@ export function DashboardPage() {
             ))}
           </ul>
           <p className="text-xs text-foreground-muted">
-            See <Link to="/executions" className="underline hover:text-foreground">Executions</Link> for run history and live status.
+            See{" "}
+            <Link to="/executions" className="underline hover:text-foreground">
+              Executions
+            </Link>{" "}
+            for run history and live status.
           </p>
         </div>
       )}

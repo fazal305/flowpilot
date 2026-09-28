@@ -1,4 +1,9 @@
-import { upsert, get, list, remove } from "../controllers/workflowController.js";
+import {
+  upsert,
+  get,
+  list,
+  remove,
+} from "../controllers/workflowController.js";
 
 export async function workflowRoutes(app) {
   app.put("/api/workflows/:id", upsert);

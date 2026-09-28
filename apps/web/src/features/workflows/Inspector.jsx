@@ -71,7 +71,9 @@ export function Inspector() {
               className={FIELD_CLASS}
             >
               {["GET", "POST", "PUT", "PATCH", "DELETE"].map((m) => (
-                <option key={m} value={m}>{m}</option>
+                <option key={m} value={m}>
+                  {m}
+                </option>
               ))}
             </select>
           </label>
@@ -111,7 +113,9 @@ export function Inspector() {
                 className={FIELD_CLASS}
               >
                 {["GET", "POST", "PUT", "PATCH", "DELETE"].map((m) => (
-                  <option key={m} value={m}>{m}</option>
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
                 ))}
               </select>
             </label>
@@ -137,7 +141,8 @@ export function Inspector() {
               />
             </label>
             <p className="text-[11px] leading-relaxed text-foreground-muted">
-              Requests to private/internal IP ranges are blocked server-side (SSRF protection).
+              Requests to private/internal IP ranges are blocked server-side
+              (SSRF protection).
             </p>
           </>
         )}
@@ -162,21 +167,24 @@ export function Inspector() {
                 className={FIELD_CLASS}
               >
                 {CONDITION_OPERATORS.map((op) => (
-                  <option key={op} value={op}>{op}</option>
+                  <option key={op} value={op}>
+                    {op}
+                  </option>
                 ))}
               </select>
             </label>
-            {config.operator !== "isEmpty" && config.operator !== "isNotEmpty" && (
-              <label className={LABEL_CLASS}>
-                <span className="text-foreground-muted">Value</span>
-                <input
-                  type="text"
-                  value={config.value ?? ""}
-                  onChange={(e) => patch({ value: e.target.value })}
-                  className={FIELD_CLASS}
-                />
-              </label>
-            )}
+            {config.operator !== "isEmpty" &&
+              config.operator !== "isNotEmpty" && (
+                <label className={LABEL_CLASS}>
+                  <span className="text-foreground-muted">Value</span>
+                  <input
+                    type="text"
+                    value={config.value ?? ""}
+                    onChange={(e) => patch({ value: e.target.value })}
+                    className={FIELD_CLASS}
+                  />
+                </label>
+              )}
           </>
         )}
 
@@ -202,7 +210,9 @@ export function Inspector() {
               />
             </label>
             <label className={LABEL_CLASS}>
-              <span className="text-foreground-muted">User prompt template</span>
+              <span className="text-foreground-muted">
+                User prompt template
+              </span>
               <textarea
                 rows={3}
                 value={config.userPromptTemplate}
@@ -224,7 +234,9 @@ export function Inspector() {
                 className={FIELD_CLASS}
               >
                 {NOTIFICATION_CHANNELS.map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
               </select>
             </label>

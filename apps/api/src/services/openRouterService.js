@@ -16,7 +16,14 @@ export class OpenRouterError extends Error {
  * @param {{model: string, systemPrompt: string, userPrompt: string, maxTokens?: number, temperature?: number, jsonMode?: boolean}} params
  * @returns {Promise<{content: string, promptTokens: number, completionTokens: number, latencyMs: number}>}
  */
-export async function callOpenRouter({ model, systemPrompt, userPrompt, maxTokens = 512, temperature = 0.3, jsonMode = false }) {
+export async function callOpenRouter({
+  model,
+  systemPrompt,
+  userPrompt,
+  maxTokens = 512,
+  temperature = 0.3,
+  jsonMode = false,
+}) {
   if (!env.openRouterApiKey) {
     throw new OpenRouterError("OPENROUTER_API_KEY is not configured.");
   }
@@ -51,13 +58,17 @@ export async function callOpenRouter({ model, systemPrompt, userPrompt, maxToken
     const body = await response.json().catch(() => null);
 
     if (!response.ok) {
-      const message = body?.error?.message ?? `OpenRouter request failed (${response.status}).`;
+      const message =
+        body?.error?.message ??
+        `OpenRouter request failed (${response.status}).`;
       throw new OpenRouterError(message);
     }
 
     const content = body?.choices?.[0]?.message?.content;
     if (typeof content !== "string") {
-      throw new OpenRouterError("OpenRouter returned an unexpected response shape.");
+      throw new OpenRouterError(
+        "OpenRouter returned an unexpected response shape.",
+      );
     }
 
     return {

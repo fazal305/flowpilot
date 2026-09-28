@@ -32,7 +32,12 @@ export function NodePalette() {
     <aside className="flex w-60 shrink-0 flex-col gap-4 overflow-y-auto border-r border-border bg-surface p-3">
       {NODE_CATEGORIES.map((category) => (
         <div key={category.id}>
-          <h2 className={["mb-1.5 px-1 text-[11px] font-semibold uppercase tracking-wide", CATEGORY_TEXT[category.id]].join(" ")}>
+          <h2
+            className={[
+              "mb-1.5 px-1 text-[11px] font-semibold uppercase tracking-wide",
+              CATEGORY_TEXT[category.id],
+            ].join(" ")}
+          >
             {category.label}
           </h2>
           <div className="flex flex-col gap-1">

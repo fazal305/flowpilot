@@ -26,7 +26,16 @@ test("succeeds on the first attempt with no retries needed", async () => {
     return jsonResponse({ ok: true });
   };
   try {
-    const node = { type: "httpRequest", config: { url: SAFE_URL, method: "GET", headers: {}, auth: { type: "none" }, timeoutMs: 500 } };
+    const node = {
+      type: "httpRequest",
+      config: {
+        url: SAFE_URL,
+        method: "GET",
+        headers: {},
+        auth: { type: "none" },
+        timeoutMs: 500,
+      },
+    };
     const { output, retryCount } = await runNode(node, null, {});
     assert.equal(calls, 1);
     assert.equal(retryCount, 0);
@@ -45,7 +54,16 @@ test("retries a failing httpRequest node and succeeds once fetch recovers", asyn
     return jsonResponse({ recovered: true });
   };
   try {
-    const node = { type: "httpRequest", config: { url: SAFE_URL, method: "GET", headers: {}, auth: { type: "none" }, timeoutMs: 500 } };
+    const node = {
+      type: "httpRequest",
+      config: {
+        url: SAFE_URL,
+        method: "GET",
+        headers: {},
+        auth: { type: "none" },
+        timeoutMs: 500,
+      },
+    };
     const { output, retryCount } = await runNode(node, null, {});
     assert.equal(calls, 3);
     assert.equal(retryCount, 2);
@@ -63,11 +81,23 @@ test("gives up after exhausting retries and reports the retry count on the error
     throw new Error("always down");
   };
   try {
-    const node = { type: "httpRequest", config: { url: SAFE_URL, method: "GET", headers: {}, auth: { type: "none" }, timeoutMs: 500 } };
-    await assert.rejects(() => runNode(node, null, {}), (error) => {
-      assert.equal(error.retryCount, 2); // MAX_RETRIES
-      return true;
-    });
+    const node = {
+      type: "httpRequest",
+      config: {
+        url: SAFE_URL,
+        method: "GET",
+        headers: {},
+        auth: { type: "none" },
+        timeoutMs: 500,
+      },
+    };
+    await assert.rejects(
+      () => runNode(node, null, {}),
+      (error) => {
+        assert.equal(error.retryCount, 2); // MAX_RETRIES
+        return true;
+      },
+    );
     assert.equal(calls, 3); // initial attempt + 2 retries
   } finally {
     global.fetch = originalFetch;
@@ -75,13 +105,22 @@ test("gives up after exhausting retries and reports the retry count on the error
 });
 
 test("a non-retryable node type (condition) fails immediately without retrying", async () => {
-  const node = { type: "condition", config: { field: "x", operator: "unknownOperator" } };
-  await assert.rejects(() => runNode(node, { x: 1 }, {}), (error) => {
-    assert.equal(error.retryCount, 0);
-    return true;
-  });
+  const node = {
+    type: "condition",
+    config: { field: "x", operator: "unknownOperator" },
+  };
+  await assert.rejects(
+    () => runNode(node, { x: 1 }, {}),
+    (error) => {
+      assert.equal(error.retryCount, 0);
+      return true;
+    },
+  );
 });
 
 test("an unregistered node type throws a clear error", async () => {
-  await assert.rejects(() => runNode({ type: "carrierPigeon", config: {} }, null, {}), /No executor registered/);
+  await assert.rejects(
+    () => runNode({ type: "carrierPigeon", config: {} }, null, {}),
+    /No executor registered/,
+  );
 });

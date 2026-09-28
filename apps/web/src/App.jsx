@@ -18,13 +18,23 @@ import { WORKFLOWS_QUERY_KEY } from "@/features/workflows/api/workflowDrafts";
 // React Flow (and its transitive weight) is only needed on these two routes —
 // code-splitting them keeps everyone who's just browsing the dashboard or
 // workflow list from downloading it upfront.
-const EditorPage = lazy(() => import("@/features/workflows/EditorPage").then((m) => ({ default: m.EditorPage })));
+const EditorPage = lazy(() =>
+  import("@/features/workflows/EditorPage").then((m) => ({
+    default: m.EditorPage,
+  })),
+);
 const ExecutionDetailPage = lazy(() =>
-  import("@/features/executions/ExecutionDetailPage").then((m) => ({ default: m.ExecutionDetailPage }))
+  import("@/features/executions/ExecutionDetailPage").then((m) => ({
+    default: m.ExecutionDetailPage,
+  })),
 );
 
 function RouteFallback() {
-  return <div className="flex h-screen w-screen items-center justify-center bg-background text-sm text-foreground-muted">Loading…</div>;
+  return (
+    <div className="flex h-screen w-screen items-center justify-center bg-background text-sm text-foreground-muted">
+      Loading…
+    </div>
+  );
 }
 
 function GlobalShortcuts() {
@@ -37,7 +47,8 @@ function useSeedDemoData() {
   const queryClient = useQueryClient();
   useEffect(() => {
     seedDemoWorkflowsIfEmpty().then((seeded) => {
-      if (seeded) queryClient.invalidateQueries({ queryKey: WORKFLOWS_QUERY_KEY });
+      if (seeded)
+        queryClient.invalidateQueries({ queryKey: WORKFLOWS_QUERY_KEY });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -57,7 +68,10 @@ export default function App() {
             <Route path="/" element={<DashboardPage />} />
             <Route path="/workflows" element={<WorkflowsPage />} />
             <Route path="/executions" element={<ExecutionsPage />} />
-            <Route path="/executions/:executionId" element={<ExecutionDetailPage />} />
+            <Route
+              path="/executions/:executionId"
+              element={<ExecutionDetailPage />}
+            />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />

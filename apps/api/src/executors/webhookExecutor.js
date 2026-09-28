@@ -6,5 +6,11 @@
  * downstream nodes have something to inspect.
  */
 export async function executeWebhook(config, input) {
-  return input ?? { triggeredManually: true, path: config.path, method: config.method };
+  return (
+    input ?? {
+      triggeredManually: true,
+      path: config.path,
+      method: config.method,
+    }
+  );
 }

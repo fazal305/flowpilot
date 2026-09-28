@@ -21,7 +21,11 @@ export class ExecutionNotFoundError extends Error {
  */
 export async function triggerExecution(workflowId, triggeredBy) {
   const execution = await createPendingExecution(workflowId, triggeredBy);
-  await enqueueExecution({ executionId: execution.id, workflowId, triggeredBy });
+  await enqueueExecution({
+    executionId: execution.id,
+    workflowId,
+    triggeredBy,
+  });
   return execution.id;
 }
 

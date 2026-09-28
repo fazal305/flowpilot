@@ -1,7 +1,11 @@
 import { prisma } from "../db/prisma.js";
 
 const STATUS_TO_DB = { draft: "DRAFT", active: "ACTIVE", inactive: "INACTIVE" };
-const STATUS_FROM_DB = { DRAFT: "draft", ACTIVE: "active", INACTIVE: "inactive" };
+const STATUS_FROM_DB = {
+  DRAFT: "draft",
+  ACTIVE: "active",
+  INACTIVE: "inactive",
+};
 
 function toPublicWorkflow(row, graph) {
   return {
@@ -23,7 +27,14 @@ function toPublicWorkflow(row, graph) {
  * replace inside a transaction rather than diffing node-by-node — workflow
  * graphs are small, so this is cheap and impossible to get subtly wrong.
  */
-export async function upsertWorkflowGraph({ id, workspaceId, name, description, status, graph }) {
+export async function upsertWorkflowGraph({
+  id,
+  workspaceId,
+  name,
+  description,
+  status,
+  graph,
+}) {
   return prisma.$transaction(async (tx) => {
     const existing = await tx.workflow.findUnique({ where: { id } });
     const nextVersion = existing ? existing.currentVersion + 1 : 1;

@@ -2,7 +2,12 @@ import { validateGraph } from "@flowpilot/shared";
 import { prisma } from "../db/prisma.js";
 import { getWorkflow } from "./workflowService.js";
 import { getDefaultWorkspaceId } from "../repositories/workspaceRepository.js";
-import { buildAdjacency, findTriggerNodes, nextNodeIds, descendantsOf } from "./graphParser.js";
+import {
+  buildAdjacency,
+  findTriggerNodes,
+  nextNodeIds,
+  descendantsOf,
+} from "./graphParser.js";
 import { runNode } from "./nodeRunner.js";
 import { broadcast } from "../realtime/executionHub.js";
 
@@ -23,12 +28,15 @@ function inputForNode(node, outputs, edges) {
   // for the MVP — expose each upstream output keyed by source id rather than
   // silently picking one.
   const merged = {};
-  for (const edge of incoming) merged[edge.source] = outputs.get(edge.source) ?? null;
+  for (const edge of incoming)
+    merged[edge.source] = outputs.get(edge.source) ?? null;
   return merged;
 }
 
 async function log(executionId, level, message, nodeKey = null) {
-  await prisma.executionLog.create({ data: { executionId, level, message, nodeKey } });
+  await prisma.executionLog.create({
+    data: { executionId, level, message, nodeKey },
+  });
 }
 
 /**
@@ -55,7 +63,11 @@ export async function runExecution({ executionId, workflowId, triggeredBy }) {
       where: { id: executionId },
       data: { status: "FAILED", finishedAt: new Date(), durationMs: 0 },
     });
-    await log(executionId, "ERROR", `Blocked before running: ${errors.map((e) => e.message).join("; ")}`);
+    await log(
+      executionId,
+      "ERROR",
+      `Blocked before running: ${errors.map((e) => e.message).join("; ")}`,
+    );
     notify(executionId, "execution:finished");
     return executionId;
   }
@@ -112,13 +124,21 @@ export async function runExecution({ executionId, workflowId, triggeredBy }) {
         },
       });
       notify(executionId, "node:finished");
-      await log(executionId, "INFO", `${node.label} succeeded in ${Date.now() - nodeStart}ms.`, node.id);
+      await log(
+        executionId,
+        "INFO",
+        `${node.label} succeeded in ${Date.now() - nodeStart}ms.`,
+        node.id,
+      );
 
-      for (const nextId of nextNodeIds(node, output, adjacency)) queue.push(nextId);
+      for (const nextId of nextNodeIds(node, output, adjacency))
+        queue.push(nextId);
 
       if (node.type === "condition") {
         const skippedHandle = output.result ? "false" : "true";
-        const skippedEdges = (adjacency.get(node.id) ?? []).filter((e) => e.sourceHandle === skippedHandle);
+        const skippedEdges = (adjacency.get(node.id) ?? []).filter(
+          (e) => e.sourceHandle === skippedHandle,
+        );
         for (const edge of skippedEdges) {
           const branch = descendantsOf(edge.target, adjacency);
           branch.add(edge.target);
@@ -141,7 +161,12 @@ export async function runExecution({ executionId, workflowId, triggeredBy }) {
         },
       });
       notify(executionId, "node:finished");
-      await log(executionId, "ERROR", `${node.label} failed: ${error.message}`, node.id);
+      await log(
+        executionId,
+        "ERROR",
+        `${node.label} failed: ${error.message}`,
+        node.id,
+      );
       // Nothing downstream gets queued — a failed node's descendants simply
       // never run (they don't get a SKIPPED record either, since "we never
       // got there" reads clearer in the inspector than a manufactured skip).
@@ -152,16 +177,29 @@ export async function runExecution({ executionId, workflowId, triggeredBy }) {
     const node = nodesById.get(id);
     if (!node) continue;
     await prisma.nodeExecution.create({
-      data: { executionId, nodeKey: node.id, nodeType: node.type, status: "SKIPPED" },
+      data: {
+        executionId,
+        nodeKey: node.id,
+        nodeType: node.type,
+        status: "SKIPPED",
+      },
     });
   }
 
   const durationMs = Date.now() - startedAt;
   await prisma.workflowExecution.update({
     where: { id: executionId },
-    data: { status: hasFailure ? "FAILED" : "SUCCESS", finishedAt: new Date(), durationMs },
+    data: {
+      status: hasFailure ? "FAILED" : "SUCCESS",
+      finishedAt: new Date(),
+      durationMs,
+    },
   });
-  await log(executionId, "INFO", `Execution finished (${hasFailure ? "failed" : "success"}) in ${durationMs}ms.`);
+  await log(
+    executionId,
+    "INFO",
+    `Execution finished (${hasFailure ? "failed" : "success"}) in ${durationMs}ms.`,
+  );
   notify(executionId, "execution:finished");
 
   return executionId;

@@ -46,7 +46,7 @@ export function CommandPalette() {
         icon: def.icon,
         action: () => addNode(def.type, { x: 240, y: 160 }),
       })),
-    [addNode]
+    [addNode],
   );
 
   return (
@@ -66,35 +66,68 @@ export function CommandPalette() {
             No matching commands.
           </Command.Empty>
 
-          <Command.Group heading="Navigate" className="px-2 py-1 text-[11px] uppercase tracking-wide text-foreground-muted [&_[cmdk-group-heading]]:px-1 [&_[cmdk-group-heading]]:pb-1">
-            <Command.Item onSelect={run(() => navigate("/workflows/new"))} className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm aria-selected:bg-surface-muted">
+          <Command.Group
+            heading="Navigate"
+            className="px-2 py-1 text-[11px] uppercase tracking-wide text-foreground-muted [&_[cmdk-group-heading]]:px-1 [&_[cmdk-group-heading]]:pb-1"
+          >
+            <Command.Item
+              onSelect={run(() => navigate("/workflows/new"))}
+              className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm aria-selected:bg-surface-muted"
+            >
               <Plus className="h-4 w-4" aria-hidden="true" /> Create workflow
             </Command.Item>
-            <Command.Item onSelect={run(() => setAiDialogOpen(true))} className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm aria-selected:bg-surface-muted">
-              <Sparkles className="h-4 w-4" aria-hidden="true" /> Generate workflow with AI
+            <Command.Item
+              onSelect={run(() => setAiDialogOpen(true))}
+              className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm aria-selected:bg-surface-muted"
+            >
+              <Sparkles className="h-4 w-4" aria-hidden="true" /> Generate
+              workflow with AI
             </Command.Item>
-            <Command.Item onSelect={run(() => navigate("/workflows"))} className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm aria-selected:bg-surface-muted">
+            <Command.Item
+              onSelect={run(() => navigate("/workflows"))}
+              className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm aria-selected:bg-surface-muted"
+            >
               <Workflow className="h-4 w-4" aria-hidden="true" /> Open workflows
             </Command.Item>
-            <Command.Item onSelect={run(() => navigate("/executions"))} className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm aria-selected:bg-surface-muted">
-              <PlayCircle className="h-4 w-4" aria-hidden="true" /> Open executions
+            <Command.Item
+              onSelect={run(() => navigate("/executions"))}
+              className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm aria-selected:bg-surface-muted"
+            >
+              <PlayCircle className="h-4 w-4" aria-hidden="true" /> Open
+              executions
             </Command.Item>
-            <Command.Item onSelect={run(() => navigate("/settings"))} className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm aria-selected:bg-surface-muted">
+            <Command.Item
+              onSelect={run(() => navigate("/settings"))}
+              className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm aria-selected:bg-surface-muted"
+            >
               <Settings className="h-4 w-4" aria-hidden="true" /> Open settings
             </Command.Item>
           </Command.Group>
 
-          <Command.Group heading="General" className="px-2 py-1 text-[11px] uppercase tracking-wide text-foreground-muted [&_[cmdk-group-heading]]:px-1 [&_[cmdk-group-heading]]:pb-1">
-            <Command.Item onSelect={run(toggleTheme)} className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm aria-selected:bg-surface-muted">
+          <Command.Group
+            heading="General"
+            className="px-2 py-1 text-[11px] uppercase tracking-wide text-foreground-muted [&_[cmdk-group-heading]]:px-1 [&_[cmdk-group-heading]]:pb-1"
+          >
+            <Command.Item
+              onSelect={run(toggleTheme)}
+              className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm aria-selected:bg-surface-muted"
+            >
               <SunMoon className="h-4 w-4" aria-hidden="true" /> Toggle theme
             </Command.Item>
-            <Command.Item onSelect={run(() => setShortcutsOpen(true))} className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm aria-selected:bg-surface-muted">
-              <Keyboard className="h-4 w-4" aria-hidden="true" /> Show keyboard shortcuts
+            <Command.Item
+              onSelect={run(() => setShortcutsOpen(true))}
+              className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm aria-selected:bg-surface-muted"
+            >
+              <Keyboard className="h-4 w-4" aria-hidden="true" /> Show keyboard
+              shortcuts
             </Command.Item>
           </Command.Group>
 
           {inEditor && (
-            <Command.Group heading="Editor" className="px-2 py-1 text-[11px] uppercase tracking-wide text-foreground-muted [&_[cmdk-group-heading]]:px-1 [&_[cmdk-group-heading]]:pb-1">
+            <Command.Group
+              heading="Editor"
+              className="px-2 py-1 text-[11px] uppercase tracking-wide text-foreground-muted [&_[cmdk-group-heading]]:px-1 [&_[cmdk-group-heading]]:pb-1"
+            >
               <Command.Item
                 onSelect={run(requestImmediateSave)}
                 className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm aria-selected:bg-surface-muted"
@@ -107,7 +140,8 @@ export function CommandPalette() {
                   onSelect={run(cmd.action)}
                   className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-sm aria-selected:bg-surface-muted"
                 >
-                  <cmd.icon className="h-4 w-4" aria-hidden="true" /> {cmd.label}
+                  <cmd.icon className="h-4 w-4" aria-hidden="true" />{" "}
+                  {cmd.label}
                 </Command.Item>
               ))}
             </Command.Group>
@@ -115,7 +149,10 @@ export function CommandPalette() {
         </Command.List>
       </Command.Dialog>
 
-      <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      <ShortcutsDialog
+        open={shortcutsOpen}
+        onClose={() => setShortcutsOpen(false)}
+      />
     </>
   );
 }

@@ -1,6 +1,9 @@
 import { env } from "../config/env.js";
 import { callOpenRouter, OpenRouterError } from "./openRouterService.js";
-import { validateGeneratedGraph, GeneratedGraphError } from "./generatedGraphValidator.js";
+import {
+  validateGeneratedGraph,
+  GeneratedGraphError,
+} from "./generatedGraphValidator.js";
 
 const SYSTEM_PROMPT = `You design workflow automation graphs for FlowPilot, a visual workflow tool with exactly six node types: webhook, schedule, httpRequest, condition, ai, notification.
 
@@ -30,7 +33,8 @@ Rules:
 function layoutGraph(nodes, edges) {
   const adjacency = new Map(nodes.map((n) => [n.id, []]));
   for (const edge of edges) {
-    if (adjacency.has(edge.source)) adjacency.get(edge.source).push(edge.target);
+    if (adjacency.has(edge.source))
+      adjacency.get(edge.source).push(edge.target);
   }
 
   const depth = new Map();
@@ -65,7 +69,12 @@ function layoutGraph(nodes, edges) {
 
 function mockGeneratedWorkflow(prompt) {
   const nodes = [
-    { id: "trigger", type: "webhook", label: "New Submission", config: { path: "generated", method: "POST" } },
+    {
+      id: "trigger",
+      type: "webhook",
+      label: "New Submission",
+      config: { path: "generated", method: "POST" },
+    },
     {
       id: "condition",
       type: "condition",
@@ -76,26 +85,51 @@ function mockGeneratedWorkflow(prompt) {
       id: "notifyYes",
       type: "notification",
       label: "Notify Team",
-      config: { channel: "inApp", target: "team", messageTemplate: "Matched: {{input}}" },
+      config: {
+        channel: "inApp",
+        target: "team",
+        messageTemplate: "Matched: {{input}}",
+      },
     },
     {
       id: "notifyNo",
       type: "notification",
       label: "Log Low Priority",
-      config: { channel: "inApp", target: "team", messageTemplate: "Below threshold: {{input}}" },
+      config: {
+        channel: "inApp",
+        target: "team",
+        messageTemplate: "Below threshold: {{input}}",
+      },
     },
   ];
   const edges = [
     { id: "e1", source: "trigger", target: "condition", sourceHandle: null },
-    { id: "e2", source: "condition", target: "notifyYes", sourceHandle: "true" },
-    { id: "e3", source: "condition", target: "notifyNo", sourceHandle: "false" },
+    {
+      id: "e2",
+      source: "condition",
+      target: "notifyYes",
+      sourceHandle: "true",
+    },
+    {
+      id: "e3",
+      source: "condition",
+      target: "notifyNo",
+      sourceHandle: "false",
+    },
   ];
 
   return {
     name: `Generated: ${prompt.slice(0, 60)}`,
-    description: "Mocked draft — this is an educational/portfolio project, so bring your own OpenRouter API key (OPENROUTER_API_KEY in apps/api/.env) for a real generation. This is a fixed example shape instead.",
+    description:
+      "Mocked draft — this is an educational/portfolio project, so bring your own OpenRouter API key (OPENROUTER_API_KEY in apps/api/.env) for a real generation. This is a fixed example shape instead.",
     graph: { nodes: layoutGraph(nodes, edges), edges },
-    meta: { mocked: true, model: null, promptTokens: 0, completionTokens: 0, latencyMs: 0 },
+    meta: {
+      mocked: true,
+      model: null,
+      promptTokens: 0,
+      completionTokens: 0,
+      latencyMs: 0,
+    },
   };
 }
 
@@ -118,7 +152,9 @@ export async function generateWorkflow(prompt) {
   try {
     parsed = JSON.parse(result.content);
   } catch {
-    throw new OpenRouterError("The AI's response wasn't valid JSON — try rephrasing the request.");
+    throw new OpenRouterError(
+      "The AI's response wasn't valid JSON — try rephrasing the request.",
+    );
   }
 
   const validated = validateGeneratedGraph(parsed);

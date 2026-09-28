@@ -7,7 +7,8 @@ export const NODE_DEFINITIONS = {
     label: "Webhook",
     category: "trigger",
     icon: Webhook,
-    description: "Starts when an external service sends a request to a unique URL.",
+    description:
+      "Starts when an external service sends a request to a unique URL.",
   },
   schedule: {
     type: "schedule",

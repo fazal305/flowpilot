@@ -5,7 +5,9 @@ function buildAuthHeaders(auth) {
   if (!auth || auth.type === "none") return {};
   if (auth.type === "bearer") return { Authorization: `Bearer ${auth.token}` };
   if (auth.type === "basic") {
-    const encoded = Buffer.from(`${auth.username}:${auth.password}`).toString("base64");
+    const encoded = Buffer.from(`${auth.username}:${auth.password}`).toString(
+      "base64",
+    );
     return { Authorization: `Basic ${encoded}` };
   }
   return {};
@@ -30,8 +32,13 @@ export async function executeHttpRequest(config, input) {
       signal: controller.signal,
     });
 
-    if (response.type === "opaqueredirect" || (response.status >= 300 && response.status < 400)) {
-      throw new Error("HTTP Request node does not follow redirects (SSRF protection).");
+    if (
+      response.type === "opaqueredirect" ||
+      (response.status >= 300 && response.status < 400)
+    ) {
+      throw new Error(
+        "HTTP Request node does not follow redirects (SSRF protection).",
+      );
     }
 
     const contentType = response.headers.get("content-type") ?? "";
@@ -40,7 +47,9 @@ export async function executeHttpRequest(config, input) {
       : await response.text();
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${typeof body === "string" ? body.slice(0, 300) : JSON.stringify(body).slice(0, 300)}`);
+      throw new Error(
+        `HTTP ${response.status}: ${typeof body === "string" ? body.slice(0, 300) : JSON.stringify(body).slice(0, 300)}`,
+      );
     }
 
     return { status: response.status, body };

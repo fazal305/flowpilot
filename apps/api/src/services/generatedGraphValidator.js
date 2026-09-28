@@ -40,7 +40,9 @@ export class GeneratedGraphError extends Error {
 export function validateGeneratedGraph(raw) {
   const parsed = rawGraphSchema.safeParse(raw);
   if (!parsed.success) {
-    throw new GeneratedGraphError(`AI response didn't match the expected shape: ${parsed.error.message}`);
+    throw new GeneratedGraphError(
+      `AI response didn't match the expected shape: ${parsed.error.message}`,
+    );
   }
 
   const { name, description, nodes, edges } = parsed.data;
@@ -51,7 +53,9 @@ export function validateGeneratedGraph(raw) {
     config: { ...defaultConfigForType(node.type), ...node.config },
   }));
 
-  const safeEdges = edges.filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target));
+  const safeEdges = edges.filter(
+    (edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target),
+  );
 
   return { name, description, nodes: safeNodes, edges: safeEdges };
 }

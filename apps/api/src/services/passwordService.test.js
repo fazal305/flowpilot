@@ -10,7 +10,10 @@ test("a hashed password never equals the plaintext", async () => {
 
 test("verifyPassword accepts the correct password", async () => {
   const hash = await hashPassword("correct horse battery staple");
-  assert.equal(await verifyPassword(hash, "correct horse battery staple"), true);
+  assert.equal(
+    await verifyPassword(hash, "correct horse battery staple"),
+    true,
+  );
 });
 
 test("verifyPassword rejects an incorrect password", async () => {
@@ -19,6 +22,9 @@ test("verifyPassword rejects an incorrect password", async () => {
 });
 
 test("hashing the same password twice produces different hashes (salted)", async () => {
-  const [a, b] = await Promise.all([hashPassword("same password"), hashPassword("same password")]);
+  const [a, b] = await Promise.all([
+    hashPassword("same password"),
+    hashPassword("same password"),
+  ]);
   assert.notEqual(a, b);
 });

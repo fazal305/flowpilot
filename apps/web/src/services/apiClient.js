@@ -17,7 +17,10 @@ async function request(path, options = {}) {
       ...options,
     });
   } catch {
-    throw new ApiError("Couldn't reach the FlowPilot API. Is the server running?", 0);
+    throw new ApiError(
+      "Couldn't reach the FlowPilot API. Is the server running?",
+      0,
+    );
   }
 
   if (response.status === 204) return null;
@@ -36,7 +39,12 @@ async function request(path, options = {}) {
 
 export const api = {
   get: (path) => request(path),
-  put: (path, data) => request(path, { method: "PUT", body: JSON.stringify(data) }),
-  post: (path, data) => request(path, { method: "POST", body: data ? JSON.stringify(data) : undefined }),
+  put: (path, data) =>
+    request(path, { method: "PUT", body: JSON.stringify(data) }),
+  post: (path, data) =>
+    request(path, {
+      method: "POST",
+      body: data ? JSON.stringify(data) : undefined,
+    }),
   delete: (path) => request(path, { method: "DELETE" }),
 };

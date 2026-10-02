@@ -9,10 +9,6 @@ A visual workflow automation platform — build trigger → condition → action
 
 *(A Netlify site also exists at `flowpilot-fazal305.netlify.app` but has no deployed content — that account's deploy is blocked by its own credit limit. Vercel is the live one.)*
 
-## Screenshots
-
-Not included yet — add some by visiting the live link above; this section is a placeholder for them rather than a claim they don't exist for a reason.
-
 ## Product overview
 
 A workflow is a graph of six node types:
